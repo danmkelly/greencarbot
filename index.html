@@ -370,24 +370,21 @@ function deduplicateTop(candidates, count) {
 // INTERVIEW QUESTIONS
 // =========================================================================
 var INTERVIEW = [
-  { id:'annualKm', step:'1/6', q:'How many kilometres do you drive per year? (This is the biggest factor in your total emissions.)',
+  { id:'annualKm', step:'1/5', q:'How many kilometres do you drive per year? (This is the biggest factor in your total emissions.)',
     parse:function(t){ var n=parseInt(t.replace(/,/g,'')); if(n>=1000&&n<=100000) return n; var m=t.match(/(\d[\d,]*)/); return m?parseInt(m[1].replace(/,/g,'')):null; },
     chips:[{l:'5,000 km (low)',q:'5000'},{l:'15,000 km (average)',q:'15000'},{l:'25,000 km (high)',q:'25000'},{l:'35,000+ km',q:'35000'}] },
-  { id:'tripLength', step:'2/6', q:"What's your typical trip length? (This affects how much a PHEV can drive on electricity alone.)",
+  { id:'tripLength', step:'2/5', q:"What's your typical trip length? (This affects how much a PHEV can drive on electricity alone.)",
     parse:function(t){ var s=t.toLowerCase(); if(/short|<.?30|local|around town|city|urban/.test(s)) return 'short'; if(/medium|30.?80|commute|moderate/.test(s)) return 'medium'; if(/long|>.*80|highway|motorway/.test(s)) return 'long'; return null; },
     chips:[{l:'Short (<30 km)',q:'short'},{l:'Medium (30-80 km)',q:'medium'},{l:'Long (>80 km)',q:'long'}] },
-  { id:'chargeFreq', step:'3/6', q:'How often could you charge an electric or plug-in hybrid vehicle? (Daily charging dramatically reduces PHEV emissions.)',
+  { id:'chargeFreq', step:'3/5', q:'How often could you charge an electric or plug-in hybrid vehicle? (Daily charging dramatically reduces PHEV emissions.)',
     parse:function(t){ var s=t.toLowerCase(); if(/daily|every day|every night|always|home/.test(s)) return 'daily'; if(/weekly|once a week|few times|sometimes/.test(s)) return 'weekly'; if(/rarely|seldom|occasional|hardly/.test(s)) return 'rarely'; if(/never|no|cannot|can't|won't/.test(s)) return 'never'; return null; },
     chips:[{l:'Daily',q:'daily'},{l:'Weekly',q:'weekly'},{l:'Rarely',q:'rarely'},{l:'Never',q:'never'}] },
-  { id:'gridIntensity', step:'4/6', q:"What's the carbon intensity of your electricity? (gCO₂/kWh. This determines how clean an EV actually is <em>for you</em>.)",
+  { id:'gridIntensity', step:'4/5', q:"What's the carbon intensity of your electricity? (gCO₂/kWh. This determines how clean an EV actually is <em>for you</em>.)",
     parse:function(t){ var s=t.toLowerCase(); var n=parseInt(t); if(!isNaN(n)&&n>=0&&n<=1000) return n; if(/very.*green|renewable|solar|wind|nuclear|clean|low|hydro/.test(s)) return 50; if(/average|grid|normal|standard|typical|medium|mix/.test(s)) return 300; if(/coal|dirty|high|fossil|heavy/.test(s)) return 700; return null; },
     chips:[{l:'Very green (~50)',q:'50'},{l:'Average grid (~300)',q:'300'},{l:'Coal-heavy (~700)',q:'700'},{l:'Not sure (~400)',q:'400'}] },
-  { id:'ownershipYears', step:'5/6', q:"How many years do you plan to keep the vehicle? (Longer ownership spreads the battery's manufacturing emissions over more years.)",
+  { id:'ownershipYears', step:'5/5', q:"How many years do you plan to keep the vehicle? (Longer ownership spreads the battery's manufacturing emissions over more years.)",
     parse:function(t){ var n=parseInt(t); if(n>=1&&n<=30) return n; var m=t.match(/(\d+)/); return m?parseInt(m[1]):null; },
-    chips:[{l:'3 years',q:'3'},{l:'5 years',q:'5'},{l:'8 years',q:'8'},{l:'10+ years',q:'10'}] },
-  { id:'prefs', step:'6/6', q:'Any vehicle preferences? Seats, body type, or fuel type openness? (e.g. "5 seats, SUV, open to EV or PHEV")',
-    parse:function(t){ return t.trim(); },
-    chips:[{l:'SUV only',q:'SUV, 5 seats'},{l:'7+ seats',q:'7 seats'},{l:'EV or PHEV only',q:'EV or PHEV'},{l:'No preference',q:'open to all'}] }
+    chips:[{l:'3 years',q:'3'},{l:'5 years',q:'5'},{l:'8 years',q:'8'},{l:'10+ years',q:'10'}] }
 ];
 
 // =========================================================================
@@ -506,32 +503,19 @@ function finishInterview() {
     chargeFreq: a.chargeFreq||'weekly',
     gridIntensity: a.gridIntensity||300,
     ownershipYears: a.ownershipYears||5,
-    prefsRaw: a.prefs||'',
-    minSeats: 0
+    minSeats: minSeats
   };
 
-  var prefs=S(a.prefs||'');
-  if(/suv/.test(prefs)) filters.bodyType='SUV';
-  else if(/car/.test(prefs)&&!/suv/.test(prefs)) filters.bodyType='Car';
-  else if(/pickup|truck/.test(prefs)) filters.bodyType='Pickup';
-  else if(/van|minivan/.test(prefs)) filters.bodyType='Van';
-  else if(/wagon/.test(prefs)) filters.bodyType='Wagon';
-  else filters.bodyType='';
-
-  var seats=prefs.match(/(\d+)\s*seat/);
-  if(seats) userProfile.minSeats=parseInt(seats[1]);
-
-  if(/ev only|electric only|bev only/.test(prefs)) {
-    powertrains={ev:true,phev:false,ice:false,diesel:false};
-  } else if(/phev|plug[ -]?in|hybrid/.test(prefs)&&!/ev only/.test(prefs)) {
-    powertrains={ev:true,phev:true,ice:false,diesel:false};
-  } else if(/ice|petrol|gasoline|diesel/.test(prefs)&&!/ev|phev|electric/.test(prefs)) {
-    powertrains={ev:false,phev:false,ice:true,diesel:true};
-  } else {
+  // Keep current powertrain and body filter state; don't override
+  if (!powertrains.ev && !powertrains.phev && !powertrains.ice && !powertrains.diesel) {
     powertrains={ev:true,phev:true,ice:true,diesel:true};
   }
 
   syncFilterChips();
+
+  // Point to filter bar for refining
+  addMsg("Got it! Your personalised results are in the panel on the right. <strong>Use the filter chips above the cards</strong> to narrow by body type, seats, or powertrain \u2014 I'll re-rank instantly. You can also ask me about electricity mixes, charging routines, or how different driving patterns affect your numbers.", 'bot');
+
   runRecommendation();
 }
 
@@ -665,9 +649,9 @@ function runRecommendation() {
   addMsg(msg, 'bot');
   setChips([
     {l:'Explain the top pick',q:'explain #1'},
-    {l:'Show EV vs PHEV vs ICE',q:'compare ev vs phev vs ice'},
-    {l:'Adjust my answers',q:'restart'},
-    {l:'How this works',q:'methodology'},
+    {l:'EV vs PHEV vs ICE comparison',q:'compare ev vs phev vs ice'},
+    {l:'How does my grid affect this?',q:'how does electricity source affect EV emissions'},
+    {l:'What if I charged more?',q:'what if I charged daily instead'},
   ]);
 
   buildReflection(unique, candidates);
@@ -819,8 +803,6 @@ function buildAnswerTile() {
     {lbl:'Charging', val: p.chargeFreq, idx:2},
     {lbl:'Grid gCO\u2082/kWh', val: p.gridIntensity, idx:3},
     {lbl:'Ownership', val: p.ownershipYears+' years', idx:4},
-    {lbl:'Seats', val: seatLabel, idx:5, isSeat:true},
-    {lbl:'Prefs', val: p.prefsRaw || null, idx:5},
   ];
 
   tile.innerHTML = '';
@@ -948,11 +930,28 @@ function send() {
       sending = false; return;
     }
 
-    // Fallback
-    if (LLM_ENABLED) {
+    // Post-interview free discussion or pre-interview chat
+    if (userProfile) {
+      // Interview done — engage conversationally on green car topics
       showTyping();
-      chatLLM(txt).then(function(reply){ hideTyping(); if (reply) addMsg(reply, 'bot'); else showDefaultResponse(); });
-    } else showDefaultResponse();
+      chatLLM(txt).then(function(reply){
+        hideTyping();
+        if (reply) { addMsg(reply, 'bot'); }
+        else { addMsg("That's an interesting point. Try asking about electricity mix, charging habits, or how different driving patterns affect your CO\u2082 \u2014 I can talk through the trade-offs.", 'bot'); }
+        setChips([
+          {l:'How does my grid affect EVs?',q:'how does electricity source affect EV emissions'},
+          {l:'What if I charged more often?',q:'what if I charged daily instead'},
+          {l:'PHEV vs EV trade-offs',q:'compare PHEV versus EV for my profile'},
+          {l:'Adjust my answers',q:'restart'},
+        ]);
+      });
+    } else {
+      // No profile yet — push toward interview
+      if (LLM_ENABLED) {
+        showTyping();
+        chatLLM(txt).then(function(reply){ hideTyping(); if (reply) addMsg(reply, 'bot'); else showDefaultResponse(); });
+      } else showDefaultResponse();
+    }
   } finally { sending = false; }
 }
 
@@ -1008,7 +1007,7 @@ function chatLLM(msg) {
   conv.push({role:'user',content:msg});
   if (conv.length > 20) conv = conv.slice(-20);
   var body = JSON.stringify({model:LLM_MODEL, messages:[
-    {role:'system',content:'You are GreenCarBot, an environmental vehicle advisor. Keep responses to 2-4 sentences. Be humble about limitations. Never give financial or purchasing advice. No em dashes. No markdown.'},
+    {role:'system',content:'You are GreenCarBot, an environmental vehicle advisor. You help people understand real-world CO2 emissions from cars. You can discuss: electricity grid carbon intensity, charging routines, PHEV vs EV vs ICE trade-offs, driving patterns, battery embedded CO2, ownership periods, and how behaviour changes affect emissions. Keep responses to 2-4 sentences. Be warm and conversational. Be humble about limitations: you use EPA MY2025 data and a simplified behaviour model. Never give financial or purchasing advice. No em dashes. No markdown.'},
   ].concat(conv), temperature:0.7, max_tokens:300});
   var url = PROXY ? PROXY+'/api/llm' : LLM_URL;
   var headers = {'Content-Type':'application/json'};
