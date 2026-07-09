@@ -101,6 +101,7 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); display
 .f-chip[data-pt="ice"].active { background:var(--ice); color:#fff; border-color:var(--ice); }
 .f-chip[data-pt="diesel"].active { background:var(--diesel); color:#fff; border-color:var(--diesel); }
 .f-chip.f-body.active { background:var(--accent); color:#000; border-color:var(--accent); }
+.f-chip.f-seat.active { background:var(--accent); color:#000; border-color:var(--accent); }
 .f-chip.dead { opacity:0.35; text-decoration:line-through; cursor:not-allowed; pointer-events:none; }
 
 /* Reflection box */
@@ -240,6 +241,9 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); display
       <span class="f-chip f-body" data-dim="body" data-val="Pickup">Pickup</span>
       <span class="f-chip f-body" data-dim="body" data-val="Van">Van</span>
       <span class="f-chip f-body" data-dim="body" data-val="Wagon">Wagon</span>
+      <span class="f-chip f-seat" data-dim="seat" data-val="2">2+ seats</span>
+      <span class="f-chip f-seat active" data-dim="seat" data-val="5">5+ seats</span>
+      <span class="f-chip f-seat" data-dim="seat" data-val="7">7+ seats</span>
     </div>
     <div id="car-grid">
       <div id="reflection-box"></div>
@@ -299,6 +303,7 @@ var allCars = [], userProfile = null, sending = false;
 var interviewActive = false, interviewStep = 0;
 var interviewAnswers = {};
 var powertrains = { ev:true, phev:true, ice:true, diesel:true };
+var minSeats = 5;
 var filters = { bodyType:'', sort:'personal' };
 var conv = [];
 var appReady = false;
@@ -544,6 +549,10 @@ function syncFilterChips() {
   qsa('#filter-bar .f-chip[data-dim="body"]').forEach(function(c){
     c.classList.toggle('active', filters.bodyType===c.dataset.val);
   });
+  // Sync seat chips
+  qsa('#filter-bar .f-chip[data-dim="seat"]').forEach(function(c){
+    c.classList.toggle('active', minSeats === parseInt(c.dataset.val));
+  });
 }
 
 function updateDeadChips() {
@@ -560,10 +569,11 @@ function updateDeadChips() {
 
 function countPowertrainMatches(pt) {
   var cnt = 0;
+  var sLim = (userProfile && userProfile.minSeats) || minSeats;
   for (var i = 0; i < allCars.length; i++) {
     var c = allCars[i];
     if (carPowertrain(c) !== pt) continue;
-    if (userProfile && userProfile.minSeats && (c.Seats||5) < userProfile.minSeats) continue;
+    if (sLim && (c.Seats||5) < sLim) continue;
     if (filters.bodyType && c['Body Type'] !== filters.bodyType) continue;
     cnt++;
   }
@@ -588,6 +598,14 @@ function onBodyChip(el) {
   if (userProfile && appReady) runRecommendation();
 }
 
+function onSeatChip(el) {
+  qsa('#filter-bar .f-chip[data-dim="seat"]').forEach(function(c){ c.classList.remove('active'); });
+  el.classList.add('active');
+  minSeats = parseInt(el.dataset.val);
+  if (userProfile) userProfile.minSeats = minSeats;
+  if (userProfile && appReady) runRecommendation();
+}
+
 function onSortChange() {
   filters.sort = el('sort-select').value;
   if (userProfile && appReady) runRecommendation();
@@ -599,11 +617,12 @@ function onSortChange() {
 function runRecommendation() {
   if (!userProfile || !allCars.length) return;
 
-  // Build candidate list applying seat + body filters (powertrain filter applied next)
+  // Build candidate list applying seat + body filters
   var candidates = [];
+  var seatLimit = userProfile.minSeats || minSeats;
   for (var i = 0; i < allCars.length; i++) {
     var c = allCars[i];
-    if (userProfile.minSeats && (c.Seats||5) < userProfile.minSeats) continue;
+    if (seatLimit && (c.Seats||5) < seatLimit) continue;
     if (filters.bodyType && c['Body Type'] !== filters.bodyType) continue;
     if (!powertrainAllowed(c)) continue;
     candidates.push(c);
@@ -793,13 +812,15 @@ function buildAnswerTile() {
   tile.style.display = 'block';
 
   var p = userProfile, a = interviewAnswers;
+  var seatLabel = (p.minSeats || minSeats) + '+ seats';
   var items = [
     {lbl:'Annual km', val: p.annualKm ? p.annualKm+' km' : null, idx:0},
     {lbl:'Trip length', val: p.tripLengthLabel, idx:1},
     {lbl:'Charging', val: p.chargeFreq, idx:2},
     {lbl:'Grid gCO\u2082/kWh', val: p.gridIntensity, idx:3},
     {lbl:'Ownership', val: p.ownershipYears+' years', idx:4},
-    {lbl:'Preferences', val: p.prefsRaw || null, idx:5},
+    {lbl:'Seats', val: seatLabel, idx:5, isSeat:true},
+    {lbl:'Prefs', val: p.prefsRaw || null, idx:5},
   ];
 
   tile.innerHTML = '';
@@ -883,6 +904,7 @@ function send() {
       el('answers-tile').style.display = 'none'; el('answers-tile').innerHTML = '';
       el('reflection-box').style.display = 'none';
       powertrains = { ev:true, phev:true, ice:true, diesel:true };
+      minSeats = 5;
       filters.bodyType = '';
       syncFilterChips();
       updateDeadChips();
@@ -1057,6 +1079,7 @@ document.addEventListener('DOMContentLoaded', function(){
     el('progress-fill').style.width = '0%';
     setChips(null); userProfile = null;
     powertrains = { ev:true, phev:true, ice:true, diesel:true };
+    minSeats = 5;
     filters.bodyType = '';
     syncFilterChips();
     el('answers-tile').style.display = 'none'; el('answers-tile').innerHTML = '';
@@ -1079,6 +1102,9 @@ document.addEventListener('DOMContentLoaded', function(){
   // Body chips
   qsa('#filter-bar .f-chip[data-dim="body"]').forEach(function(c){
     c.addEventListener('click', function(){ onBodyChip(c); });
+  });
+  qsa('#filter-bar .f-chip[data-dim="seat"]').forEach(function(c){
+    c.addEventListener('click', function(){ onSeatChip(c); });
   });
 
   el('about-link').addEventListener('click', function(){ showModal('modal-about'); });
