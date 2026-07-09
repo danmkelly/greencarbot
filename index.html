@@ -407,6 +407,7 @@ function S(s) { return (s||'').toString().toLowerCase().trim(); }
 function scrollChat() { var m=el('messages'); if(m) m.scrollTop=m.scrollHeight; }
 
 function addMsg(text, sender) {
+  var messages = el('messages'); if (!messages) return;
   var m=document.createElement('div'); m.className='msg msg-'+sender;
   if(sender==='bot') { var s=document.createElement('div'); s.className='speaker'; s.textContent='🌱 GreenCarBot'; m.appendChild(s); }
   var p=document.createElement('div'); p.innerHTML=sender==='user'?esc(text):text;
@@ -414,8 +415,8 @@ function addMsg(text, sender) {
   el('messages').appendChild(m); scrollChat();
 }
 function addSys(t) { var m=document.createElement('div'); m.className='msg msg-sys'; m.textContent=t; el('messages').appendChild(m); scrollChat(); }
-function setChips(arr) { var s=el('suggestions'); s.innerHTML=''; if(!arr) return; arr.forEach(function(c){ var sp=document.createElement('span'); sp.className='chip'; sp.textContent=c.l; sp.onclick=function(){ qa(c.q); }; s.appendChild(sp); }); }
-function qa(t) { el('inp').value=t; send(); }
+function setChips(arr) { var s=el('suggestions'); if(!s) return; s.innerHTML=''; if(!arr) return; arr.forEach(function(c){ var sp=document.createElement('span'); sp.className='chip'; sp.textContent=c.l; sp.onclick=function(){ qa(c.q); }; s.appendChild(sp); }); }
+function qa(t) { var inp=el('inp'); if(!inp) return; inp.value=t; send(); }
 
 // =========================================================================
 // EMISSIONS MODEL
@@ -612,8 +613,8 @@ function onSortChange() {
 // RECOMMENDATION ENGINE
 // =========================================================================
 function runRecommendation() {
-  if (!userProfile || !allCars.length) return;
-
+  if (!userProfile || !allCars.length) { console.log('runRecommendation: no profile or no cars'); return; }
+  try {
   // Build candidate list applying seat + body filters
   var candidates = [];
   var seatLimit = userProfile.minSeats || minSeats;
@@ -672,10 +673,13 @@ function runRecommendation() {
   renderResults(unique);
   updateSummary(unique);
   updateDeadChips();
+  } catch(e) { console.error('runRecommendation error:', e); }
 }
 
 function renderResults(cars) {
   var grid = el('car-grid'), empty = el('empty-state');
+  if (!grid || !empty) return;
+  try {
   // Clear cards but preserve reflection box
   var refl = el('reflection-box');
   grid.innerHTML = '';
@@ -733,6 +737,7 @@ function renderResults(cars) {
       (flags.length?'<div class="flags">'+flags.map(function(f){ return '<span class="flag">'+f+'</span>'; }).join('')+'</div>':'');
     grid.appendChild(card);
   });
+  } catch(e) { console.error('renderResults error:', e); }
 }
 
 function updateSummary(top) {
