@@ -1,1 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoDrive Advisor – Find Your Car. Tread Lightly.</title>
+<style>
+:root {
+  --bg: #0a0f0a;
+  --panel: #0f1a0f;
+  --card: #111d11;
+  --border: #1a2e1a;
+  --text: #c8d6c8;
+  --muted: #6b8a6b;
+  --accent: #2ecc71;
+  --accent-glow: rgba(46,204,113,0.30);
+  --gold: #f1c40f;
+  --ev: #27ae60;
+  --phev: #2e86c1;
+  --ice: #c0392b;
+  --diesel: #7f8c8d;
+  --electricity: #2ecc71;
+  --msg-bot: #111d11;
+  --msg-user: #1a3020;
+  --radius: 12px;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; overflow:hidden; }
+body {
+  font-family:var(--font); background:var(--bg); color:var(--text);
+  display:flex; flex-direction:column;
+}
 
+/* ── Brand Bar ── */
+#brand {
+  background: linear-gradient(135deg, #0a1a0a 0%, #0d2a0d 50%, #0a1a0a 100%);
+  border-bottom:1px solid var(--border); padding:12px 24px;
+  display:flex; align-items:center; gap:12px; flex-shrink:0;
+  position:relative; overflow:hidden;
+}
+#brand::after {
+  content:''; position:absolute; top:-50%; right:-10%; width:300px; height:300px;
+  background:radial-gradient(circle, var(--accent-glow) 0%, transparent 70%); pointer-events:none;
+}
+#brand .logo { font-size:28px; }
+#brand h1 { font-size:1.1rem; font-weight:700; background:linear-gradient(135deg,var(--accent),#27ae60); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+#brand .tag { font-size:0.75rem; color:var(--muted); }
+#brand .right { margin-left:auto; display:flex; gap:12px; align-items:center; }
+.badge { font-size:0.65rem; padding:3px 8px; border-radius:10px; font-weight:600; }
+.badge-live { background:#27ae6022; color:var(--accent); border:1px solid #27ae6044; }
+.badge-off { background:#c0392b22; color:#e74c3c; border:1px solid #c0392b44; }
+.badge-data { background:#2e86c122; color:#3498db; border:1px solid #2e86c144; }
+
+/* ── Main Layout ── */
+#main {
+  display:grid; grid-template-columns:42% 58%; flex:1; overflow:hidden;
+}
+
+/* ── Chat Panel ── */
+#chat-panel {
+  display:flex; flex-direction:column; background:var(--panel);
+  border-right:1px solid var(--border); min-width:0;
+}
+#chat-top {
+  padding:10px 16px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:10px; flex-shrink:0;
+}
+#chat-avatar {
+  width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--accent),#27ae60);
+  display:flex; align-items:center; justify-content:center; font-size:18px;
+}
+#chat-name { font-weight:600; font-size:0.9rem; }
+#chat-status { font-size:0.7rem; color:var(--accent); }
+#messages {
+  flex:1; overflow-y:auto; padding:16px;
+  display:flex; flex-direction:column; gap:10px;
+}
+#messages::-webkit-scrollbar { width:4px; }
+#messages::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+
+.msg { max-width:88%; padding:10px 14px; border-radius:var(--radius); font-size:0.88rem; line-height:1.5; word-wrap:break-word; animation:fadeUp 0.25s ease; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.msg-bot { align-self:flex-start; background:var(--msg-bot); border:1px solid var(--border); border-bottom-left-radius:4px; }
+.msg-user { align-self:flex-end; background:var(--msg-user); border:1px solid #1e3a1e; border-bottom-right-radius:4px; }
+.msg-sys { align-self:center; background:transparent; color:var(--muted); font-size:0.75rem; max-width:95%; text-align:center; padding:6px 14px; }
+.msg .speaker { font-weight:700; font-size:0.7rem; color:var(--accent); margin-bottom:4px; display:flex; align-items:center; gap:4px; }
+.msg .speaker .sicon { font-size:14px; }
+.msg .time { font-size:0.6rem; color:var(--muted); margin-top:2px; }
+.msg-bot .time { text-align:left; }
+.msg-user .time { text-align:right; }
+
+.chat-link { color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+.chat-link:hover { color:#27ae60; }
+
+/* Typing */
+.typing { align-self:flex-start; display:flex; gap:4px; padding:10px 14px; }
+.typing span { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:bounce 0.6s infinite alternate; }
+.typing span:nth-child(2) { animation-delay:0.2s; }
+.typing span:nth-child(3) { animation-delay:0.4s; }
+@keyframes bounce { to { transform:translateY(-6px); opacity:0.4; } }
+
+/* Suggestion chips */
+.suggestions { display:flex; flex-wrap:wrap; gap:6px; padding:4px 16px 12px; }
+.chip {
+  font-size:0.75rem; padding:6px 12px; border-radius:16px; cursor:pointer;
+  background:var(--card); border:1px solid var(--border); color:var(--text);
+  transition:all 0.15s; white-space:nowrap;
+}
+.chip:hover { border-color:var(--accent); color:var(--accent); background:#1a3020; }
+
+/* Input area */
+#input-area {
+  padding:12px 16px; border-top:1px solid var(--border); display:flex; gap:8px; flex-shrink:0;
+}
+#inp {
+  flex:1; padding:10px 14px; border-radius:20px; border:1px solid var(--border);
+  background:var(--bg); color:var(--text); font-family:var(--font); font-size:0.85rem; outline:none;
+}
+#inp:focus { border-color:var(--accent); }
+#inp::placeholder { color:var(--muted); }
+#mic-btn, #send-btn {
+  width:38px; height:38px; border-radius:50%; border:1px solid var(--border);
+  background:var(--card); color:var(--text); cursor:pointer; font-size:16px;
+  display:flex; align-items:center; justify-content:center; transition:all 0.15s; flex-shrink:0;
+}
+#send-btn:hover { border-color:var(--accent); color:var(--accent); }
+#mic-btn.listening { border-color:#e74c3c; color:#e74c3c; animation:pulse-ring 1s infinite; }
+@keyframes pulse-ring { 0% { box-shadow:0 0 0 0 rgba(231,76,60,0.4); } 70% { box-shadow:0 0 0 8px rgba(231,76,60,0); } 100% { box-shadow:0 0 0 0 rgba(231,76,60,0); } }
+
+/* Handoff bar */
+#handoff {
+  padding:8px 16px; text-align:center; font-size:0.7rem; color:var(--muted);
+  border-top:1px solid var(--border); flex-shrink:0;
+}
+#handoff a { color:var(--accent); cursor:pointer; }
+
+/* ── Results Panel ── */
+#results-panel {
+  display:flex; flex-direction:column; overflow:hidden; background:var(--bg);
+}
+#results-top {
+  padding:12px 16px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
+}
+#results-count { font-size:0.8rem; color:var(--muted); }
+#results-controls { display:flex; gap:8px; align-items:center; }
+#sort-select {
+  padding:6px 10px; border-radius:8px; border:1px solid var(--border);
+  background:var(--card); color:var(--text); font-size:0.75rem; cursor:pointer;
+}
+
+/* Filter bar */
+#filter-bar {
+  display:flex; flex-wrap:wrap; gap:8px; padding:10px 16px;
+  border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.filt-group { display:flex; align-items:center; gap:4px; }
+.filt-group label { font-size:0.65rem; color:var(--muted); text-transform:uppercase; white-space:nowrap; }
+.filt-group select, .filt-group input {
+  padding:4px 8px; border-radius:6px; border:1px solid var(--border);
+  background:var(--card); color:var(--text); font-size:0.72rem;
+}
+.filt-group select { max-width:120px; }
+.filt-group input { width:70px; }
+.filt-chip {
+  font-size:0.68rem; padding:3px 8px; border-radius:12px; cursor:pointer;
+  border:1px solid var(--border); background:var(--card); color:var(--muted);
+  transition:all 0.15s; white-space:nowrap;
+}
+.filt-chip:hover { border-color:var(--accent); }
+.filt-chip.active { background:var(--accent); color:#000; border-color:var(--accent); font-weight:600; }
+.filt-chip.fuel-electricity.active { background:var(--accent); }
+.filt-chip.fuel-gasoline.active { background:var(--ice); }
+.filt-chip.fuel-diesel.active { background:var(--diesel); }
+#clear-filters {
+  font-size:0.68rem; color:#e74c3c; cursor:pointer; padding:3px 8px;
+  border-radius:12px; border:1px solid transparent; white-space:nowrap;
+}
+#clear-filters:hover { border-color:#e74c3c44; }
+
+/* Car grid */
+#car-grid {
+  flex:1; overflow-y:auto; padding:12px;
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:10px;
+  align-content:start;
+}
+#car-grid::-webkit-scrollbar { width:4px; }
+#car-grid::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+
+/* Empty state */
+#empty-state {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  height:100%; gap:16px; padding:40px; text-align:center;
+}
+#empty-state .icon { font-size:56px; opacity:0.4; }
+#empty-state h3 { font-size:1.1rem; color:var(--muted); }
+#empty-state p { font-size:0.8rem; color:var(--muted); max-width:400px; line-height:1.5; }
+
+/* Car cards */
+.car-card {
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:14px; cursor:pointer; transition:all 0.2s; position:relative; overflow:hidden;
+}
+.car-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
+.car-card .rank-badge {
+  position:absolute; top:8px; right:8px; width:30px; height:30px;
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:0.75rem; font-weight:700;
+}
+.rank-1 { background:linear-gradient(135deg,#f1c40f,#e67e22); color:#000; }
+.rank-2 { background:linear-gradient(135deg,#bdc3c7,#95a5a6); color:#000; }
+.rank-3 { background:linear-gradient(135deg,#cd7f32,#a0522d); color:#fff; }
+.rank-other { background:var(--border); color:var(--muted); }
+.car-card .fuel-badge {
+  display:inline-block; padding:2px 8px; border-radius:8px; font-size:0.65rem; font-weight:700;
+  text-transform:uppercase; margin-bottom:6px;
+}
+.fuel-ev { background:#27ae6044; color:#2ecc71; }
+.fuel-phev { background:#2e86c144; color:#3498db; }
+.fuel-gas { background:#c0392b44; color:#e74c3c; }
+.fuel-diesel { background:#7f8c8d44; color:#95a5a6; }
+.car-card h4 { font-size:0.9rem; margin-bottom:2px; }
+.car-card .model { font-size:0.78rem; color:var(--muted); margin-bottom:8px; }
+.car-card .specs { display:grid; grid-template-columns:1fr 1fr; gap:4px 12px; font-size:0.7rem; }
+.car-card .specs .val { color:var(--text); font-weight:600; }
+.car-card .specs .lbl { color:var(--muted); }
+.car-card .co2-bar {
+  height:4px; border-radius:2px; margin-top:10px; background:var(--border);
+  position:relative; overflow:hidden;
+}
+.car-card .co2-fill {
+  height:100%; border-radius:2px; transition:width 0.5s ease;
+}
+.co2-low { background:var(--accent); }
+.co2-med { background:#f39c12; }
+.co2-high { background:var(--ice); }
+.co2-zero { background:var(--ev); }
+
+/* Expanded card detail */
+.car-card .detail { display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); font-size:0.7rem; }
+.car-card.expanded .detail { display:block; }
+.car-card .detail .row { display:flex; justify-content:space-between; padding:2px 0; }
+.car-card .detail .row .lbl { color:var(--muted); }
+.car-card .detail .row .val { font-weight:600; }
+.car-card .expand-hint { font-size:0.65rem; color:var(--accent); margin-top:8px; text-align:center; }
+
+/* Loading overlay */
+#load-overlay {
+  position:absolute; inset:0; background:rgba(0,0,0,0.7);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; z-index:10;
+}
+#load-overlay.hidden { display:none; }
+.spinner {
+  width:40px; height:40px; border:3px solid var(--border);
+  border-top-color:var(--accent); border-radius:50%; animation:wheelSpin 0.8s linear infinite;
+}
+@keyframes wheelSpin { to { transform:rotate(360deg); } }
+
+/* Modals */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.7);
+  display:flex; align-items:center; justify-content:center; z-index:100;
+}
+.modal-overlay.hidden { display:none; }
+.modal {
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+  padding:24px; max-width:480px; width:90%; max-height:80vh; overflow-y:auto;
+}
+.modal h3 { margin-bottom:12px; color:var(--accent); }
+.modal p { font-size:0.85rem; line-height:1.6; color:var(--text); margin-bottom:10px; }
+.modal .close {
+  float:right; background:none; border:none; color:var(--muted); cursor:pointer;
+  font-size:1.2rem; padding:0 4px;
+}
+.modal .close:hover { color:var(--text); }
+
+/* Interview banner */
+#interview-banner {
+  margin:8px 16px; padding:10px 14px; border-radius:var(--radius);
+  background:linear-gradient(135deg,#1a3020,#0d2a0d); border:1px solid #27ae6044;
+  font-size:0.78rem; display:none; align-items:center; gap:8px;
+}
+#interview-banner .step { color:var(--accent); font-weight:700; }
+#interview-banner .q { color:var(--text); flex:1; }
+#interview-banner .skip { color:var(--muted); cursor:pointer; font-size:0.7rem; text-decoration:underline; }
+
+/* Responsive */
+@media(max-width:768px) {
+  #main { grid-template-columns:1fr; grid-template-rows:55% 45%; }
+  #results-panel { border-top:1px solid var(--border); }
+  #car-grid { grid-template-columns:1fr; }
+}
+@media(max-width:500px) {
+  #brand { padding:8px 12px; }
+  #brand h1 { font-size:0.9rem; }
+  #filter-bar { gap:4px; padding:8px; }
+  .filt-group input { width:50px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Brand Bar -->
+<div id="brand">
+  <span class="logo">🌿</span>
+  <div>
+    <h1>EcoDrive Advisor</h1>
+    <div class="tag">Find your car. Tread lightly.</div>
+  </div>
+  <div class="right">
+    <span id="badge-llm" class="badge badge-off">LLM Off</span>
+    <span id="badge-data" class="badge badge-data">EPA MY25</span>
+    <span id="clear-mem" style="font-size:0.7rem;color:var(--muted);cursor:pointer;display:none;" title="Clear memory">Clear</span>
+  </div>
+</div>
+
+<!-- Main Layout -->
+<div id="main">
+
+  <!-- Chat Panel -->
+  <div id="chat-panel">
+    <div id="chat-top">
+      <div id="chat-avatar">🌱</div>
+      <div>
+        <div id="chat-name">EcoDrive</div>
+        <div id="chat-status">Online</div>
+      </div>
+    </div>
+    <div id="interview-banner">
+      <span class="step" id="interview-step"></span>
+      <span class="q" id="interview-q"></span>
+      <span class="skip" id="interview-skip">skip interview ▸</span>
+    </div>
+    <div id="messages" role="log" aria-label="Chat messages"></div>
+    <div id="suggestions" class="suggestions"></div>
+    <div id="input-area">
+      <button id="mic-btn" title="Voice input" aria-label="Microphone">🎤</button>
+      <input id="inp" type="text" placeholder="Describe your needs..." aria-label="Chat input">
+      <button id="send-btn" title="Send" aria-label="Send">▶</button>
+    </div>
+    <div id="handoff">Prefer a real human? <a onclick="showHuman()">Contact us</a></div>
+  </div>
+
+  <!-- Results Panel -->
+  <div id="results-panel" style="position:relative;">
+    <div id="load-overlay"><div class="spinner"></div><span style="font-size:0.8rem;color:var(--muted);">Loading vehicle data...</span></div>
+    <div id="results-top">
+      <span id="results-count">1,410 vehicles available</span>
+      <div id="results-controls">
+        <select id="sort-select" onchange="onSort()">
+          <option value="co2-asc">CO₂: Lowest first</option>
+          <option value="co2-desc">CO₂: Highest first</option>
+          <option value="mpg-desc">MPG: Highest first</option>
+          <option value="mpg-asc">MPG: Lowest first</option>
+          <option value="range-desc">Range: Longest first</option>
+          <option value="make-asc">Make A–Z</option>
+        </select>
+      </div>
+    </div>
+    <div id="filter-bar">
+      <div class="filt-group"><label>Make</label><select id="f-make" onchange="onFilter()"><option value="">All</option></select></div>
+      <div class="filt-group"><label>Class</label><select id="f-class" onchange="onFilter()"><option value="">All</option></select></div>
+      <div class="filt-group"><label>Seats</label><select id="f-seats" onchange="onFilter()"><option value="">Any</option></select></div>
+      <span class="filt-chip" data-f="fuel" data-v="Electricity" onclick="toggleFuelChip(this)">⚡ EV</span>
+      <span class="filt-chip" data-f="fuel" data-v="Gasoline" onclick="toggleFuelChip(this)">⛽ Gas</span>
+      <span class="filt-chip" data-f="fuel" data-v="Diesel" onclick="toggleFuelChip(this)">🛢 Diesel</span>
+      <span class="filt-chip" data-f="drive" data-v="All Wheel Drive" onclick="toggleDriveChip(this)">AWD</span>
+      <span class="filt-chip" data-f="drive" data-v="2-Wheel Drive, Front" onclick="toggleDriveChip(this)">FWD</span>
+      <span class="filt-chip" data-f="drive" data-v="2-Wheel Drive, Rear" onclick="toggleDriveChip(this)">RWD</span>
+      <span class="filt-chip" data-f="body" data-v="SUV" onclick="toggleBodyChip(this)">SUV</span>
+      <span class="filt-chip" data-f="body" data-v="Car" onclick="toggleBodyChip(this)">Car</span>
+      <span class="filt-chip" data-f="body" data-v="Pickup" onclick="toggleBodyChip(this)">Pickup</span>
+      <span class="filt-chip" data-f="body" data-v="Van" onclick="toggleBodyChip(this)">Van</span>
+      <div class="filt-group"><label>MPG ≥</label><input id="f-mpg-min" type="number" placeholder="Min" onchange="onFilter()"></div>
+      <div class="filt-group"><label>CO₂ ≤</label><input id="f-co2-max" type="number" placeholder="Max g/km" onchange="onFilter()"></div>
+      <span id="clear-filters" onclick="clearAllFilters()">✕ Clear</span>
+    </div>
+    <div id="car-grid"></div>
+    <div id="empty-state">
+      <div class="icon">🌿</div>
+      <h3>Tell me what you're looking for</h3>
+      <p>I'll help you find an environmentally responsible vehicle that fits your life. Try the guided interview or describe your needs in the chat.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div id="modal-human" class="modal-overlay hidden">
+  <div class="modal">
+    <button class="close" onclick="hideModal('modal-human')">✕</button>
+    <h3>Talk to a Human</h3>
+    <p>EcoDrive is an AI assistant. For personalised financial or legal advice about vehicle purchasing, please consult a qualified professional.</p>
+    <p>For questions about this tool, contact your course administrator.</p>
+  </div>
+</div>
+<div id="modal-info" class="modal-overlay hidden">
+  <div class="modal">
+    <button class="close" onclick="hideModal('modal-info')">✕</button>
+    <h3>About EcoDrive Advisor</h3>
+    <p><strong>Data source:</strong> EPA Fuel Economy Guide MY2025 – 1,410 passenger vehicles (ICE, EV, PHEV).</p>
+    <p><strong>Rankings:</strong> Vehicles are ranked by tailpipe CO₂ emissions (g/km). For EVs, this is zero at tailpipe. Consider your local electricity grid mix when evaluating total lifecycle emissions.</p>
+    <p><strong>Limitations:</strong> This tool provides environmental comparisons based on EPA data. It does not account for manufacturing emissions, battery production impacts, or end-of-life disposal. Always verify with current EPA ratings.</p>
+    <p><strong>Privacy:</strong> Conversations are stored only in your browser (localStorage). Nothing is sent to any server except for AI processing (optional).</p>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+// =========================================================================
+// CONFIG
+// =========================================================================
+const API_URL = typeof LLM_URL !== 'undefined' ? LLM_URL : '';
+const API_KEY = typeof LLM_KEY !== 'undefined' ? LLM_KEY : '';
+const API_MODEL = typeof LLM_MODEL !== 'undefined' ? LLM_MODEL : 'deepseek-chat';
+const API_PROXY = typeof PROXY_URL !== 'undefined' ? PROXY_URL : '';
+const LLM_ENABLED = !!(API_KEY || API_PROXY);
+const DATA_URL = 'epa_cars.json';
+
+// =========================================================================
+// GLOBALS
+// =========================================================================
+let allCars = [];
+let filteredCars = [];
+let filters = {
+  make: '', vclass: '', bodyType: '', seats: '', fuels: [], drives: [],
+  mpgMin: 0, co2Max: 9999, sortBy: 'co2-asc'
+};
+let conv = [];
+let memory = { visits:0, lastVisit:'', recentSearches:[], userName:'', consent:'', interviewStep:0, userNeeds:{} };
+let sending = false;
+let gibberishCount = 0;
+let interviewActive = false;
+let interviewData = {};
+const MAX_CONV = 30;
+
+// =========================================================================
+// HELPERS
+// =========================================================================
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+const escHtml = (s) => { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; };
+const S = (s) => (s||'').toString().toLowerCase().trim();
+const sc = () => { const m=$('#messages'); m.scrollTop=m.scrollHeight; };
+
+// =========================================================================
+// MEMORY
+// =========================================================================
+function loadMemory() {
+  try { const r=localStorage.getItem('ecodrive_mem'); if(r) memory=JSON.parse(r); } catch(e) {}
+}
+function saveMemory() {
+  if(memory.consent!=='yes') return;
+  memory.visits++; memory.lastVisit=new Date().toISOString();
+  try { localStorage.setItem('ecodrive_mem',JSON.stringify(memory)); } catch(e) {}
+}
+function clearMemory() {
+  localStorage.removeItem('ecodrive_mem');
+  memory={visits:0,lastVisit:'',recentSearches:[],userName:'',consent:'',interviewStep:0,userNeeds:{}};
+  interviewData={}; interviewActive=false; hideInterviewBanner();
+  $('#clear-mem').style.display='none';
+}
+
+// =========================================================================
+// UI
+// =========================================================================
+function addMsg(text, sender) {
+  const m=document.createElement('div'); m.className='msg msg-'+sender;
+  const t=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  if(sender==='bot') {
+    const sp=document.createElement('div'); sp.className='speaker';
+    sp.innerHTML='<span class="sicon">🌱</span> EcoDrive'; m.appendChild(sp);
+  }
+  const p=document.createElement('div'); p.innerHTML=sender==='user'?escHtml(text):enrichLinks(text);
+  m.appendChild(p);
+  const tm=document.createElement('div'); tm.className='time'; tm.textContent=t; m.appendChild(tm);
+  $('#messages').appendChild(m); sc();
+  if(sender==='bot'&&memory.consent==='yes'&&typeof SpeechSynthesisUtterance!=='undefined') {
+    // auto-speak disabled by default for eco advisor - less intrusive
+  }
+}
+
+function addSysMsg(text) {
+  const m=document.createElement('div'); m.className='msg msg-sys'; m.textContent=text;
+  $('#messages').appendChild(m); sc();
+}
+
+function showTyping() {
+  const d=document.createElement('div'); d.className='typing'; d.id='typing-indicator';
+  d.innerHTML='<span></span><span></span><span></span>';
+  $('#messages').appendChild(d); sc();
+}
+function hideTyping() { const t=$('#typing-indicator'); if(t) t.remove(); }
+
+function addSugg(chips) {
+  const s=$('#suggestions'); s.innerHTML='';
+  chips.forEach(c=>{
+    const sp=document.createElement('span'); sp.className='chip'; sp.textContent=c.label;
+    sp.onclick=()=>{ qa(c.query||c.label); };
+    s.appendChild(sp);
+  });
+}
+
+function qa(text) { $('#inp').value=text; send(); }
+
+function enrichLinks(text) {
+  return text.replace(/([A-Z][a-z]+ [A-Z][a-z0-9-]+)/g, (m) => {
+    const found=allCars.find(c=>S(c.Make)+' '+S(c.Model)===S(m));
+    if(found) return `<span class="chat-link" data-query="${escHtml(m)}">${escHtml(m)}</span>`;
+    return m;
+  });
+}
+
+function showHuman() { $('#modal-human').classList.remove('hidden'); }
+function hideModal(id) { $('#'+id).classList.add('hidden'); }
+// Close modals on overlay click
+$$('.modal-overlay').forEach(o=>o.addEventListener('click',function(e){if(e.target===this)this.classList.add('hidden');}));
+
+// =========================================================================
+// INTERVIEW ENGINE
+// =========================================================================
+const INTERVIEW_QUESTIONS = [
+  {
+    id:'passengers', step:'1/6',
+    q:'How many people do you need to carry regularly?',
+    parse:(txt)=>{
+      const n=parseInt(txt); if(n>=1&&n<=15) return n;
+      const m=txt.match(/(\d+)/); return m?parseInt(m[1]):null;
+    },
+    chips:[{label:'1-2 people',query:'1-2'},{label:'3-5 people',query:'5'},{label:'6-7 people',query:'7'},{label:'8+ people',query:'8'}]
+  },
+  {
+    id:'usage', step:'2/6',
+    q:'What kind of driving do you mostly do?',
+    parse:(txt)=>{
+      const s=S(txt);
+      if(s.includes('city')||s.includes('urban')||s.includes('town')) return 'city';
+      if(s.includes('highway')||s.includes('motorway')||s.includes('long')) return 'highway';
+      if(s.includes('mix')||s.includes('both')||s.includes('combin')) return 'mixed';
+      return null;
+    },
+    chips:[{label:'Mostly city',query:'city'},{label:'Mostly highway',query:'highway'},{label:'Mixed',query:'mixed'}]
+  },
+  {
+    id:'budget', step:'3/6',
+    q:'Do you have a budget range in mind? (e.g., "under €40,000" or "no limit")',
+    parse:(txt)=>{ return S(txt); },
+    chips:[{label:'Under €30k',query:'under 30000'},{label:'€30k-€50k',query:'30000-50000'},{label:'€50k-€80k',query:'50000-80000'},{label:'No limit',query:'no limit'}]
+  },
+  {
+    id:'charging', step:'4/6',
+    q:'Do you have access to home charging for an electric vehicle?',
+    parse:(txt)=>{
+      const s=S(txt);
+      if(s.includes('yes')||s.includes('yeah')||s.includes('yep')||s.includes('do')||s.includes('have')) return 'yes';
+      if(s.includes('no')||s.includes('nope')||s.includes('not')||s.includes("don't")||s.includes('cannot')) return 'no';
+      return null;
+    },
+    chips:[{label:'Yes, home charging',query:'yes'},{label:'No home charging',query:'no'},{label:'Public charging only',query:'no'}]
+  },
+  {
+    id:'electricity', step:'5/6',
+    q:"What's your electricity supply like? (This helps me assess how green an EV would be for you)",
+    parse:(txt)=>{
+      const s=S(txt);
+      if(s.includes('green')||s.includes('renewable')||s.includes('solar')||s.includes('clean')||s.includes('wind')) return 'green';
+      if(s.includes('grid')||s.includes('standard')||s.includes('normal')||s.includes('regular')||s.includes('average')) return 'grid';
+      if(s.includes('coal')||s.includes('dirty')||s.includes('fossil')||s.includes('not sure')||s.includes('unsure')) return 'dirty';
+      return null;
+    },
+    chips:[{label:'Green tariff / solar',query:'green'},{label:'Standard grid mix',query:'grid'},{label:"Not sure",query:'grid'}]
+  },
+  {
+    id:'mustHave', step:'6/6',
+    q:'Any must-have features? (e.g., AWD, SUV, specific brand, minimum range)',
+    parse:(txt)=>{ return S(txt); },
+    chips:[{label:'AWD/4WD',query:'AWD'},{label:'SUV only',query:'SUV'},{label:'7+ seats',query:'7 seats'},{label:'No preference',query:'none'}]
+  },
+];
+
+function showInterviewBanner(q) {
+  $('#interview-step').textContent = q.step;
+  $('#interview-q').textContent = q.q;
+  $('#interview-banner').style.display = 'flex';
+}
+function hideInterviewBanner() {
+  $('#interview-banner').style.display = 'none';
+}
+
+function startInterview() {
+  interviewActive = true;
+  interviewData = {};
+  memory.interviewStep = 0;
+  askInterviewQuestion(0);
+}
+
+function askInterviewQuestion(idx) {
+  if(idx >= INTERVIEW_QUESTIONS.length) {
+    finishInterview();
+    return;
+  }
+  memory.interviewStep = idx;
+  const q = INTERVIEW_QUESTIONS[idx];
+  showInterviewBanner(q);
+  addMsg(q.q, 'bot');
+  if(q.chips) addSugg(q.chips);
+}
+
+function processInterviewAnswer(txt) {
+  const idx = memory.interviewStep;
+  if(idx >= INTERVIEW_QUESTIONS.length) return false;
+  const q = INTERVIEW_QUESTIONS[idx];
+  const parsed = q.parse(txt);
+  if(parsed !== null) {
+    interviewData[q.id] = parsed;
+    memory.interviewStep = idx + 1;
+    hideInterviewBanner();
+    addSugg([]);
+    setTimeout(() => askInterviewQuestion(idx + 1), 400);
+    return true;
+  }
+  return false;
+}
+
+function finishInterview() {
+  interviewActive = false;
+  hideInterviewBanner();
+  memory.userNeeds = interviewData;
+  saveMemory();
+  addSugg([]);
+  addMsg("Great! I've noted your needs. Let me find the most environmentally sound vehicles that match. One moment...", 'bot');
+  setTimeout(() => recommendCars(), 800);
+}
+
+// =========================================================================
+// CAR RANKING ENGINE
+// =========================================================================
+function scoreCar(car) {
+  // Environmental score: lower CO2 is better
+  // For EVs: consider electricity grid impact
+  let co2 = car['CO2 Emissions (g/km)'] || 999;
+  const fuel = car['Fuel Type'];
+  const range = car['Electric Range (km)'] || 0;
+  const mpg = car['Combined MPG'] || 0;
+  const seats = car['Seats'] || 5;
+
+  // Base score from CO2 (lower = better)
+  let score = co2;
+
+  // Bonus for EVs (zero tailpipe) but adjust for grid
+  if(fuel === 'Electricity') {
+    const gridType = interviewData.electricity || 'grid';
+    // Even on dirty grid, EVs are still cleaner than most ICE
+    if(gridType === 'green') score = 0;
+    else if(gridType === 'grid') score = 20; // EU average grid ~230g/kWh, ~20g/km equivalent
+    else score = 40; // conservative dirty grid estimate
+  }
+
+  // PHEV adjustment: combine electric + gasoline proportion
+  if(fuel === 'Gasoline' && range > 1) {
+    // PHEV: if user does mostly city, electric proportion is higher
+    const usage = interviewData.usage || 'mixed';
+    const elecProp = usage === 'city' ? 0.6 : usage === 'highway' ? 0.3 : 0.45;
+    score = co2 * (1 - elecProp);
+  }
+
+  return score;
+}
+
+function recommendCars() {
+  // Filter based on user needs
+  let candidates = [...allCars];
+
+  // Passenger constraint
+  if(interviewData.passengers) {
+    const needed = interviewData.passengers;
+    candidates = candidates.filter(c => (c.Seats||5) >= needed);
+  }
+
+  // Must-have features
+  if(interviewData.mustHave && interviewData.mustHave !== 'none') {
+    const mh = S(interviewData.mustHave);
+    if(mh.includes('awd')||mh.includes('4wd')) {
+      candidates = candidates.filter(c=>S(c['Drive Type']).includes('all wheel')||S(c['Drive Type']).includes('4-wheel'));
+    }
+    if(mh.includes('suv')) {
+      candidates = candidates.filter(c=>c['Body Type']==='SUV');
+    }
+    if(mh.includes('seat')||mh.includes('7')) {
+      candidates = candidates.filter(c=>(c.Seats||5)>=7);
+    }
+  }
+
+  // Charging constraint: if no home charging, deprioritize EVs (but don't exclude)
+  // Mark them instead
+  const noCharging = interviewData.charging === 'no';
+
+  // Score and sort
+  candidates.forEach(c => { c._score = scoreCar(c); });
+  candidates.sort((a,b) => a._score - b._score);
+
+  // Take top 10
+  const top10 = candidates.slice(0, 10);
+  filteredCars = candidates; // keep all for browsing
+  renderResults(top10, true);
+
+  // Generate recommendation message
+  let msg = `Here are the **top ${Math.min(10, top10.length)} environmentally sound vehicles** matching your needs:\n\n`;
+  top10.forEach((c,i)=>{
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    const fuelIcon = c['Fuel Type']==='Electricity'?'⚡':c['Fuel Type']==='Diesel'?'🛢':'⛽';
+    const co2 = c['CO2 Emissions (g/km)'];
+    const co2Display = co2 === 0 ? '0 (tailpipe)' : co2.toFixed(0)+' g/km';
+    msg += `${medal} **#${i+1}:** ${c['Make']} ${c['Model']} – ${fuelIcon} ${co2Display}\n`;
+  });
+
+  if(noCharging && top10.some(c=>c['Fuel Type']==='Electricity')) {
+    msg += "\n💡 *Some top picks are EVs. Since you mentioned limited home charging, you may want to consider plug-in hybrids or efficient gasoline vehicles from the list instead.*";
+  }
+
+  addMsg(msg, 'bot');
+  addSugg([
+    {label:'Show all matches ▸', query:'show all'},
+    {label:'Filter by EV only', query:'EV only'},
+    {label:'Start over', query:'restart'},
+  ]);
+}
+
+// =========================================================================
+// DATA LOADING
+// =========================================================================
+function fetchCars(retries=2) {
+  const overlay = $('#load-overlay');
+  overlay.classList.remove('hidden');
+  return fetch(DATA_URL)
+    .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(data=>{
+      allCars = data.map(c=>({
+        ...c,
+        Make: S(c.Make).replace(/\b\w/g,l=>l.toUpperCase()),
+        Model: c.Model,
+        'Vehicle Class': c['Vehicle Class'],
+        'Body Type': c['Body Type'],
+        Seats: c.Seats||5,
+        'Fuel Type': c['Fuel Type'],
+        'Battery Capacity (kWh)': c['Battery Capacity (kWh)']||0,
+        'Electric Range (km)': c['Electric Range (km)']||0,
+        'City MPG': c['City MPG']||0,
+        'Highway MPG': c['Highway MPG']||0,
+        'Combined MPG': c['Combined MPG']||0,
+        'CO2 Emissions (g/km)': c['CO2 Emissions (g/km)']||0,
+        'Drive Type': c['Drive Type']||'',
+        Footprint: c['Footprint']||'',
+      }));
+      filteredCars = [...allCars];
+      overlay.classList.add('hidden');
+      buildFilterOptions();
+      renderResults(filteredCars);
+      $('#results-count').textContent = allCars.length.toLocaleString()+' vehicles loaded';
+      if(LLM_ENABLED) $('#badge-llm').className='badge badge-live';
+      $('#badge-llm').textContent = LLM_ENABLED ? 'LLM Live' : 'LLM Off';
+    })
+    .catch(err=>{
+      console.error('Load error:',err);
+      if(retries>0) {
+        overlay.querySelector('span').textContent = 'Retrying...';
+        setTimeout(()=>fetchCars(retries-1), 2000);
+      } else {
+        overlay.classList.add('hidden');
+        addSysMsg('⚠️ Could not load vehicle data. Please refresh the page.');
+      }
+    });
+}
+
+// =========================================================================
+// FILTERS
+// =========================================================================
+function buildFilterOptions() {
+  const makes = [...new Set(allCars.map(c=>c.Make))].sort();
+  const sel = $('#f-make'); makes.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
+
+  const classes = [...new Set(allCars.map(c=>c['Vehicle Class']))].sort();
+  const csel = $('#f-class'); classes.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; csel.appendChild(o); });
+
+  const seats = [...new Set(allCars.map(c=>c.Seats))].sort((a,b)=>a-b);
+  const ssel = $('#f-seats'); seats.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v+'+ seats'; ssel.appendChild(o); });
+}
+
+function onFilter() {
+  filters.make = $('#f-make').value;
+  filters.vclass = $('#f-class').value;
+  filters.seats = $('#f-seats').value;
+  filters.mpgMin = parseFloat($('#f-mpg-min').value)||0;
+  filters.co2Max = parseFloat($('#f-co2-max').value)||9999;
+  applyFilters();
+}
+
+function toggleFuelChip(el) {
+  el.classList.toggle('active');
+  if(el.classList.contains('active')) { if(!filters.fuels.includes(el.dataset.v)) filters.fuels.push(el.dataset.v); }
+  else { filters.fuels = filters.fuels.filter(f=>f!==el.dataset.v); }
+  applyFilters();
+}
+
+function toggleDriveChip(el) {
+  el.classList.toggle('active');
+  if(el.classList.contains('active')) { if(!filters.drives.includes(el.dataset.v)) filters.drives.push(el.dataset.v); }
+  else { filters.drives = filters.drives.filter(d=>d!==el.dataset.v); }
+  applyFilters();
+}
+
+function toggleBodyChip(el) {
+  // Single-select for body type
+  $$('.filt-chip[data-f="body"]').forEach(c=>c.classList.remove('active'));
+  if(el.classList.contains('active')) {
+    el.classList.remove('active'); filters.bodyType = '';
+  } else {
+    el.classList.add('active'); filters.bodyType = el.dataset.v;
+  }
+  applyFilters();
+}
+
+function onSort() {
+  filters.sortBy = $('#sort-select').value;
+  applyFilters();
+}
+
+function clearAllFilters() {
+  filters = { make:'', vclass:'', bodyType:'', seats:'', fuels:[], drives:[], mpgMin:0, co2Max:9999, sortBy:'co2-asc' };
+  $('#f-make').value=''; $('#f-class').value=''; $('#f-seats').value='';
+  $('#f-mpg-min').value=''; $('#f-co2-max').value='';
+  $('#sort-select').value = 'co2-asc';
+  $$('.filt-chip.active').forEach(c=>c.classList.remove('active'));
+  filteredCars = [...allCars];
+  applyFilters();
+  addSysMsg('Filters cleared — showing all vehicles');
+}
+
+function applyFilters() {
+  let cars = [...allCars];
+  if(filters.make) cars = cars.filter(c=>c.Make===filters.make);
+  if(filters.vclass) cars = cars.filter(c=>c['Vehicle Class']===filters.vclass);
+  if(filters.seats) cars = cars.filter(c=>c.Seats >= parseInt(filters.seats));
+  if(filters.fuels.length) cars = cars.filter(c=>filters.fuels.includes(c['Fuel Type']));
+  if(filters.bodyType) cars = cars.filter(c=>c['Body Type']===filters.bodyType);
+  if(filters.drives.length) cars = cars.filter(c=>filters.drives.some(d=>S(c['Drive Type']).includes(S(d))));
+  if(filters.mpgMin>0) cars = cars.filter(c=>c['Combined MPG']>=filters.mpgMin);
+  if(filters.co2Max<9999) cars = cars.filter(c=>c['CO2 Emissions (g/km)']<=filters.co2Max);
+
+  // Sort
+  switch(filters.sortBy) {
+    case 'co2-asc': cars.sort((a,b)=>(a['CO2 Emissions (g/km)']||0)-(b['CO2 Emissions (g/km)']||0)); break;
+    case 'co2-desc': cars.sort((a,b)=>(b['CO2 Emissions (g/km)']||0)-(a['CO2 Emissions (g/km)']||0)); break;
+    case 'mpg-desc': cars.sort((a,b)=>(b['Combined MPG']||0)-(a['Combined MPG']||0)); break;
+    case 'mpg-asc': cars.sort((a,b)=>(a['Combined MPG']||0)-(b['Combined MPG']||0)); break;
+    case 'range-desc': cars.sort((a,b)=>(b['Electric Range (km)']||0)-(a['Electric Range (km)']||0)); break;
+    case 'make-asc': cars.sort((a,b)=>S(a.Make).localeCompare(S(b.Make))); break;
+  }
+
+  filteredCars = cars;
+  renderResults(cars);
+}
+
+// =========================================================================
+// RENDER RESULTS
+// =========================================================================
+function renderResults(cars, showRank=false) {
+  const grid = $('#car-grid');
+  const empty = $('#empty-state');
+  const count = $('#results-count');
+  grid.innerHTML = '';
+
+  if(cars.length === 0) {
+    empty.style.display = 'flex'; grid.style.display = 'none';
+    count.textContent = 'No vehicles match';
+    return;
+  }
+
+  empty.style.display = 'none'; grid.style.display = 'grid';
+  count.textContent = cars.length.toLocaleString()+' vehicle'+(cars.length!==1?'s':'');
+
+  const display = showRank ? cars.slice(0,10) : cars.slice(0,200);
+  display.forEach((c,i)=>{
+    const card = document.createElement('div');
+    card.className = 'car-card';
+    card.onclick = function(e) { if(!e.target.closest('.chat-link')) this.classList.toggle('expanded'); };
+
+    const fuel = c['Fuel Type'];
+    const fuelClass = fuel==='Electricity'?'fuel-ev':fuel==='Diesel'?'fuel-diesel':(c['Electric Range (km)']>1)?'fuel-phev':'fuel-gas';
+    const fuelLabel = fuel==='Electricity'?'EV':fuel==='Diesel'?'Diesel':(c['Electric Range (km)']>1)?'PHEV':fuel;
+    const co2 = c['CO2 Emissions (g/km)']||0;
+    let rankBadge = '';
+    if(showRank && i<10) {
+      const rc = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other';
+      rankBadge = `<div class="rank-badge ${rc}">${i+1}</div>`;
+    }
+
+    const co2Class = co2===0?'co2-zero':co2<100?'co2-low':co2<200?'co2-med':'co2-high';
+    const maxCo2 = 400;
+    const co2Pct = Math.min(100, (co2/maxCo2)*100);
+
+    card.innerHTML = `
+      ${rankBadge}
+      <span class="fuel-badge ${fuelClass}">${fuelLabel}</span>
+      <h4>${escHtml(c.Make)}</h4>
+      <div class="model">${escHtml(c.Model)}</div>
+      <div class="specs">
+        <div><span class="lbl">Class</span><br><span class="val">${escHtml(c['Vehicle Class'])}</span></div>
+        <div><span class="lbl">Body</span><br><span class="val">${escHtml(c['Body Type'])}</span></div>
+        <div><span class="lbl">Seats</span><br><span class="val">${c.Seats}</span></div>
+        <div><span class="lbl">Drive</span><br><span class="val">${escHtml(c['Drive Type'])}</span></div>
+        <div><span class="lbl">Combined</span><br><span class="val">${c['Combined MPG']||'-'} MPG</span></div>
+        <div><span class="lbl">CO₂</span><br><span class="val" style="color:${co2===0?'var(--accent)':co2<120?'var(--accent)':co2<200?'var(--gold)':'var(--ice)'}">${co2===0?'0':co2.toFixed(0)} g/km</span></div>
+      </div>
+      <div class="co2-bar"><div class="co2-fill ${co2Class}" style="width:${co2Pct}%"></div></div>
+      <div class="detail">
+        <div class="row"><span class="lbl">City MPG</span><span class="val">${c['City MPG']||'-'}</span></div>
+        <div class="row"><span class="lbl">Highway MPG</span><span class="val">${c['Highway MPG']||'-'}</span></div>
+        <div class="row"><span class="lbl">Battery</span><span class="val">${c['Battery Capacity (kWh)']>0?c['Battery Capacity (kWh)'].toFixed(1)+' kWh':'N/A'}</span></div>
+        <div class="row"><span class="lbl">Elec. Range</span><span class="val">${c['Electric Range (km)']>0?c['Electric Range (km)'].toFixed(0)+' km':'N/A'}</span></div>
+        <div class="row"><span class="lbl">CO₂</span><span class="val">${co2===0?'0 (tailpipe)':co2.toFixed(0)+' g/km'}</span></div>
+      </div>
+      <div class="expand-hint">${'▸ Click for details'}</div>
+    `;
+    grid.appendChild(card);
+  });
+
+  if(cars.length > 200) {
+    const more = document.createElement('div');
+    more.style.cssText = 'text-align:center;padding:16px;color:var(--muted);font-size:0.8rem;grid-column:1/-1;';
+    more.textContent = `+ ${cars.length-200} more vehicles. Refine your filters to narrow results.`;
+    grid.appendChild(more);
+  }
+}
+
+// =========================================================================
+// KEYWORD EXTRACTION (chat-based filtering)
+// =========================================================================
+function extractKeywords(txt) {
+  const kw = {makes:[], fuels:[], drives:[], bodyTypes:[], seats:null, mpgMin:null, co2Max:null};
+  const s = S(txt);
+
+  // Fuel types
+  if(s.includes('electric')||s.includes(' ev ')||s.match(/\bevs?\b/)||s.match(/\bev\b/)) kw.fuels.push('Electricity');
+  if(s.includes('diesel')) kw.fuels.push('Diesel');
+  if(s.includes('gas')||s.includes('petrol')||s.includes('gasoline')||s.includes('ice')) kw.fuels.push('Gasoline');
+  if(s.includes('hybrid')||s.includes('phev')) { kw.fuels.push('Gasoline'); } // PHEVs are gasoline fuel type
+
+  // Drive types
+  if(s.includes('awd')||s.includes('all wheel')||s.includes('4wd')||s.includes('four wheel')) kw.drives.push('All Wheel Drive');
+  if(s.includes('fwd')||s.includes('front wheel')) kw.drives.push('2-Wheel Drive, Front');
+  if(s.includes('rwd')||s.includes('rear wheel')) kw.drives.push('2-Wheel Drive, Rear');
+
+  // Body types
+  if(s.includes('suv')) kw.bodyTypes.push('SUV');
+  if(s.includes('car')||s.includes('sedan')) kw.bodyTypes.push('Car');
+  if(s.includes('wagon')||s.includes('estate')) kw.bodyTypes.push('Wagon');
+  if(s.includes('van')||s.includes('minivan')||s.includes('mpv')) kw.bodyTypes.push('Van');
+  if(s.includes('pickup')||s.includes('truck')||s.includes('pick-up')) kw.bodyTypes.push('Pickup');
+
+  // Seats
+  const seatMatch = s.match(/(\d+)\s*(seat|seater|passenger)/);
+  if(seatMatch) kw.seats = parseInt(seatMatch[1]);
+
+  // Make matching
+  const makes = [...new Set(allCars.map(c=>S(c.Make)))];
+  makes.forEach(m=>{ if(s.includes(m)) kw.makes.push(m); });
+
+  // MPG
+  const mpgMatch = s.match(/mpg\s*(?:over|above|≥|>=)?\s*(\d+)/);
+  if(mpgMatch) kw.mpgMin = parseInt(mpgMatch[1]);
+
+  return kw;
+}
+
+function applyChatFilters(kw) {
+  if(kw.fuels.length) { filters.fuels = kw.fuels; syncChipUI('fuel', kw.fuels); }
+  if(kw.drives.length) { filters.drives = kw.drives; syncChipUI('drive', kw.drives); }
+  if(kw.seats) { filters.seats = kw.seats; $('#f-seats').value=kw.seats; }
+  if(kw.mpgMin) { filters.mpgMin = kw.mpgMin; $('#f-mpg-min').value=kw.mpgMin; }
+  if(kw.makes.length) {
+    filters.make = kw.makes[0];
+    $('#f-make').value = [...$('#f-make').options].find(o=>S(o.value)===kw.makes[0])?.value||'';
+  }
+  if(kw.bodyTypes.length) {
+    filters.bodyType = kw.bodyTypes[0];
+  }
+  applyFilters();
+}
+
+function syncChipUI(dim, vals) {
+  $$(`.filt-chip[data-f="${dim}"]`).forEach(c=>{
+    c.classList.toggle('active', vals.map(S).includes(S(c.dataset.v)));
+  });
+}
+
+// =========================================================================
+// LLM INTEGRATION
+// =========================================================================
+const BOT_VOICE = `You are EcoDrive Advisor, a friendly and knowledgeable environmental vehicle consultant. Your purpose: help people find the most environmentally responsible car for their needs using EPA MY2025 data.
+
+Key behaviors:
+- Keep responses to 2-4 sentences. Be warm but concise.
+- When users describe needs, ask clarifying questions to narrow down options.
+- Focus on CO2 emissions, fuel type, and efficiency as primary environmental metrics.
+- Mention that EVs have zero tailpipe emissions but total impact depends on electricity source.
+- Never give financial or legal advice. Recommend consulting professionals for purchase decisions.
+- Be honest about limitations: you use EPA data only, not real-time pricing or availability.
+- Use plain language. No em dashes. No markdown.
+- If asked about specific cars, reference their CO2 rating and efficiency.
+- Encourage the guided interview for best recommendations.`;
+
+function getMemoryPreamble() {
+  if(!memory.userName||memory.consent!=='yes') return '';
+  let p=`[Customer context: ${memory.userName}. Visit #${memory.visits}.`;
+  if(memory.recentSearches.length) p+=' Recent: '+memory.recentSearches.slice(-3).join(', ');
+  if(Object.keys(memory.userNeeds||{}).length) p+=' Needs: '+JSON.stringify(memory.userNeeds);
+  p+=']';
+  return p;
+}
+
+async function chatLLM(msg, dataContext) {
+  const preamble = getMemoryPreamble();
+  const systemMsg = BOT_VOICE + (preamble?'\n\n'+preamble:'');
+  conv.push({role:'user',content:msg});
+  if(conv.length > MAX_CONV) conv = conv.slice(-MAX_CONV);
+
+  const body = JSON.stringify({
+    model: API_MODEL,
+    messages: [{role:'system',content:systemMsg}, ...conv],
+    temperature: 0.8,
+    max_tokens: 400,
+  });
+
+  try {
+    const url = API_PROXY ? API_PROXY+'/api/llm' : API_URL;
+    const headers = {'Content-Type':'application/json'};
+    if(!API_PROXY && API_KEY) headers['Authorization'] = 'Bearer '+API_KEY;
+
+    const resp = await fetch(url, {method:'POST', headers, body});
+    if(resp.status===402) {
+      $('#badge-llm').className='badge badge-off'; $('#badge-llm').textContent='No credits';
+      return null;
+    }
+    if(!resp.ok) return null;
+    const json = await resp.json();
+    const reply = json.choices?.[0]?.message?.content;
+    if(reply) {
+      conv.push({role:'assistant',content:reply});
+      if(conv.length > MAX_CONV) conv = conv.slice(-MAX_CONV);
+    }
+    return reply;
+  } catch(e) {
+    console.error('LLM error:',e);
+    return null;
+  }
+}
+
+// =========================================================================
+// SEND / MAIN CONVERSATION LOOP
+// =========================================================================
+async function send() {
+  if(sending) return;
+  const inp = $('#inp'); const txt = inp.value.trim(); if(!txt) return;
+  inp.value = ''; sending = true;
+
+  try {
+    addMsg(txt, 'user');
+    addSugg([]);
+
+    const s = S(txt);
+
+    // --- State machine commands ---
+    if(s === 'restart' || s === 'start over') {
+      clearMemory(); clearAllFilters();
+      addMsg("Fresh start! I'm EcoDrive, your environmental car advisor. I can help you find a vehicle that fits your life and treads lightly on the planet. Would you like me to ask you a few questions to narrow things down?", 'bot');
+      addSugg([
+        {label:'Yes, guide me!', query:'start interview'},
+        {label:'Show all EVs', query:'electric vehicles'},
+        {label:'Show all cars', query:'show all'},
+        {label:'About this tool', query:'about'},
+      ]);
+      $('#clear-mem').style.display='none';
+      sending = false; return;
+    }
+
+    if(s === 'clear filters' || s === 'show all') {
+      clearAllFilters(); addSugg(getDefaultChips()); sending = false; return;
+    }
+    if(s === 'about') {
+      $('#modal-info').classList.remove('hidden'); sending = false; return;
+    }
+    if(s === 'human' || s === 'contact') { showHuman(); sending = false; return; }
+    if(s === 'start interview' || s === 'guide me' || s.includes('ask me')) {
+      startInterview(); sending = false; return;
+    }
+
+    // --- Interview flow ---
+    if(interviewActive) {
+      if(processInterviewAnswer(txt)) { sending = false; return; }
+      // Fall through to LLM if answer not parsable
+    }
+
+    // Simple direct commands
+    if(s === 'electric vehicles' || s === 'ev only' || s === 'show evs') {
+      filters.fuels = ['Electricity']; syncChipUI('fuel', ['Electricity']);
+      filters.sortBy = 'range-desc'; $('#sort-select').value='range-desc';
+      applyFilters();
+      addMsg("Here are all the electric vehicles in the catalogue, sorted by range. ⚡", 'bot');
+      addSugg([{label:'Filter by SUV EVs',query:'electric SUVs'},{label:'Longest range',query:'EVs sorted by range'},{label:'Show all',query:'show all'}]);
+      sending = false; return;
+    }
+    if(s === 'hybrids' || s === 'phevs' || s.includes('plug-in')) {
+      const hybrids = allCars.filter(c=>c['Electric Range (km)']>1&&c['Fuel Type']==='Gasoline');
+      filteredCars = hybrids; filteredCars.sort((a,b)=>(a['CO2 Emissions (g/km)']||0)-(b['CO2 Emissions (g/km)']||0));
+      renderResults(filteredCars);
+      addMsg(`Found ${hybrids.length} plug-in hybrids. These combine electric driving with a gasoline engine for flexibility.`, 'bot');
+      addSugg([{label:'Show top 10 PHEVs',query:'top 10 PHEVs'},{label:'Compare with EVs',query:'EV only'},{label:'Show all',query:'show all'}]);
+      sending = false; return;
+    }
+
+    // Gibberish detection
+    const gib = /^[asdfghjkl;']{4,}$/i.test(txt) || /(.)\1{4,}/.test(txt);
+    if(gib || (txt.length<3&&!['no','ok','ev','suv','yes','2','4','5','7','8','hi','awd','fwd','rwd'].includes(s))) {
+      gibberishCount++;
+      if(gibberishCount>=4) { addMsg("I'm having trouble understanding. Let me connect you with a human.",'bot'); showHuman(); }
+      else if(gibberishCount>=2) { addMsg("I'm not quite following. Could you rephrase that, or try one of the suggestions below?",'bot'); addSugg(getDefaultChips()); }
+      else { addMsg("I didn't quite catch that. Could you say it differently?",'bot'); }
+      sending = false; return;
+    }
+    gibberishCount = 0;
+
+    // --- Keyword extraction + filter sync ---
+    const kw = extractKeywords(txt);
+    let didFilter = false;
+    if(kw.fuels.length||kw.drives.length||kw.seats||kw.makes.length||kw.mpgMin) {
+      applyChatFilters(kw);
+      didFilter = true;
+    }
+
+    // --- LLM Response ---
+    showTyping();
+    let dataCtx = '';
+    if(filteredCars.length>0&&filteredCars.length<=50) {
+      dataCtx = `Current matching vehicles (${filteredCars.length}): `+
+        filteredCars.slice(0,8).map(c=>`${c.Make} ${c.Model} (${c['Fuel Type']}, CO₂:${c['CO2 Emissions (g/km)']}g/km, MPG:${c['Combined MPG']}, Seats:${c.Seats})`).join('; ');
+    }
+    const llmReply = LLM_ENABLED ? await chatLLM(txt, dataCtx) : null;
+    hideTyping();
+
+    if(llmReply) {
+      addMsg(llmReply, 'bot');
+    } else if(didFilter) {
+      const cnt = filteredCars.length;
+      if(cnt===0) addMsg("No vehicles match those criteria. Try broadening your search — remove some filters or try different terms.",'bot');
+      else if(cnt<=5) addMsg(`Only ${cnt} vehicles match. Here they are — each one is a strong environmental performer in its class. Click any card for full details.`, 'bot');
+      else addMsg(`Found ${cnt} vehicles matching your criteria. The top results are ranked by CO₂ emissions — greener cars appear first.`, 'bot');
+    } else {
+      addMsg("I can help you find an environmentally responsible car! Tell me about your needs — how many passengers, your typical driving, budget preferences, and whether you can charge at home. Or try one of these:", 'bot');
+    }
+
+    // Track search
+    if(memory.consent==='yes') {
+      memory.recentSearches.push(txt);
+      if(memory.recentSearches.length>10) memory.recentSearches=memory.recentSearches.slice(-10);
+      saveMemory();
+    }
+
+    // Post-search chips
+    const postChips = [];
+    if(filteredCars.length>0&&filteredCars.length<=20) {
+      postChips.push({label:'Compare top 3',query:'compare top 3'});
+    }
+    if(filteredCars.length>0) {
+      postChips.push({label:'Show all '+filteredCars.length+' ▸',query:'show all'});
+      const types = [...new Set(filteredCars.map(c=>c['Fuel Type']))];
+      if(types.includes('Gasoline')) postChips.push({label:'EVs only',query:'EV only'});
+      if(types.includes('Electricity')) postChips.push({label:'Gas cars',query:'gas only'});
+    }
+    postChips.push({label:'Start interview',query:'start interview'});
+    postChips.push({label:'Clear filters',query:'clear filters'});
+    addSugg(postChips);
+
+  } finally {
+    sending = false;
+  }
+}
+
+function getDefaultChips() {
+  return [
+    {label:'⚡ Electric vehicles', query:'electric vehicles'},
+    {label:'🔌 Plug-in hybrids', query:'plug-in hybrids'},
+    {label:'🚙 SUVs under 150g CO₂', query:'SUVs under 150'},
+    {label:'👥 7+ seat vehicles', query:'7 seats'},
+    {label:'🔄 Start interview', query:'guide me'},
+    {label:'ℹ️ About', query:'about'},
+  ];
+}
+
+// =========================================================================
+// VOICE STT
+// =========================================================================
+(function(){
+  const mic = $('#mic-btn');
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRecognition) { mic.style.display='none'; return; }
+  const rec = new SpeechRecognition(); rec.interimResults=true; rec.lang='en-US';
+  let listening = false;
+  mic.addEventListener('click',()=>{
+    if(listening) { rec.stop(); return; }
+    listening=true; mic.classList.add('listening'); rec.start();
+  });
+  rec.addEventListener('result',(e)=>{
+    const t = e.results[0][0].transcript;
+    $('#inp').value = t;
+    if(e.results[0].isFinal) { $('#inp').value=t; setTimeout(()=>send(),200); }
+  });
+  rec.addEventListener('end',()=>{ listening=false; mic.classList.remove('listening'); });
+  rec.addEventListener('error',()=>{ listening=false; mic.classList.remove('listening'); });
+})();
+
+// =========================================================================
+// INIT
+// =========================================================================
+document.addEventListener('DOMContentLoaded',()=>{
+  $('#send-btn').addEventListener('click',send);
+  $('#inp').addEventListener('keydown',(e)=>{ if(e.key==='Enter') send(); });
+  $('#clear-filters').addEventListener('click',clearAllFilters);
+  $('#clear-mem').addEventListener('click',clearMemory);
+  $('#interview-skip').addEventListener('click',()=>{ interviewActive=false; hideInterviewBanner(); addSugg([]); addMsg("No problem! Just tell me what you're looking for and I'll help.",'bot'); addSugg(getDefaultChips()); });
+
+  // Chat link clicks
+  document.addEventListener('click',(e)=>{
+    if(e.target.classList.contains('chat-link')) {
+      qa(e.target.dataset.query||e.target.textContent);
+    }
+  });
+
+  loadMemory();
+  if(memory.consent==='yes'&&memory.userName) $('#clear-mem').style.display='inline';
+
+  fetchCars().then(()=>{
+    if(memory.consent==='yes'&&memory.userName&&memory.visits>0) {
+      addMsg(`Welcome back, ${escHtml(memory.userName)}! I remember your preferences. Ready to continue your car search?`, 'bot');
+      if(Object.keys(memory.userNeeds||{}).length) {
+        addSugg([{label:'Update my needs',query:'start interview'},{label:'Show EVs',query:'electric vehicles'},{label:'Show all',query:'show all'}]);
+      } else {
+        addSugg(getDefaultChips());
+      }
+    } else {
+      addMsg("Hello! I'm EcoDrive, your environmental car advisor. 🌿 I use EPA data for 1,410 MY2025 vehicles to help you find a car that fits your life and the planet.", 'bot');
+      setTimeout(()=>{
+        addMsg("I can ask you a few quick questions about your needs—passengers, driving habits, charging access—and then recommend the most environmentally sound vehicles for you. Would you like to try that?", 'bot');
+        addSugg([
+          {label:'🌱 Yes, guide me!', query:'start interview'},
+          {label:'⚡ Show all EVs', query:'electric vehicles'},
+          {label:'🚗 Browse all cars', query:'show all'},
+          {label:'ℹ️ About this tool', query:'about'},
+        ]);
+      }, 600);
+    }
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# API keys — never commit
+config.js
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Node
+node_modules/
+
+# Build outputs
+dist/
+.cache/
