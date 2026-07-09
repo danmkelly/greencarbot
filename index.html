@@ -80,11 +80,6 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); display
 #answers-tile .a-row .a-val:hover { text-decoration:underline; }
 #answers-tile .a-row .a-miss { color:var(--muted); font-style:italic; }
 
-/* Interview banner */
-#interview-banner { margin:6px 12px; padding:8px 12px; border-radius:8px; background:linear-gradient(135deg,#1a3020,#0d2a0d); border:1px solid #27ae6044; font-size:0.72rem; display:none; align-items:center; gap:6px; flex-shrink:0; }
-#interview-banner .step { color:var(--accent); font-weight:700; white-space:nowrap; }
-#interview-banner .q { color:var(--text); flex:1; }
-#interview-banner .skip { color:var(--muted); cursor:pointer; font-size:0.65rem; text-decoration:underline; white-space:nowrap; }
 
 /* Results Panel */
 #results-panel { display:flex; flex-direction:column; overflow:hidden; background:var(--bg); position:relative; }
@@ -214,11 +209,6 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); display
       <div><div id="chat-name">GreenCarBot</div><div id="chat-status">Loading data...</div></div>
     </div>
     <div id="progress-bar"><div id="progress-fill"></div></div>
-    <div id="interview-banner">
-      <span class="step" id="i-step"></span>
-      <span class="q" id="i-q"></span>
-      <span class="skip" id="i-skip">skip ▸</span>
-    </div>
     <div id="messages" role="log" aria-label="Chat messages"></div>
     <div id="suggestions" class="suggestions"></div>
     <div id="input-area">
@@ -468,22 +458,12 @@ function computeEmissions(car, profile) {
 function startInterview() {
   interviewActive=true; interviewStep=0; interviewAnswers={};
   el('progress-fill').style.width='0%';
-  el('interview-banner').style.display='none';
   askQ(0);
 }
 
-function showBanner(idx) {
-  if(idx>=INTERVIEW.length) { el('interview-banner').style.display='none'; return; }
-  var q=INTERVIEW[idx];
-  el('i-step').textContent=q.step;
-  el('i-q').innerHTML=q.q;
-  el('interview-banner').style.display='flex';
-}
-
 function askQ(idx) {
-  if(idx>=INTERVIEW.length) { addSys('[askQ -> finishInterview]'); finishInterview(); return; }
+  if(idx>=INTERVIEW.length) { finishInterview(); return; }
   interviewStep=idx;
-  showBanner(idx);
   el('progress-fill').style.width=(idx/INTERVIEW.length*100)+'%';
   addMsg(INTERVIEW[idx].q,'bot');
   setChips(INTERVIEW[idx].chips);
@@ -498,7 +478,6 @@ function processAnswer(txt) {
     setChips(null);
     if (singleQuestionMode) {
       interviewActive = false; singleQuestionMode = false;
-      el('interview-banner').style.display = 'none';
       handleUserSummaryEdit(idx, parsed);
       return true;
     }
@@ -509,10 +488,8 @@ function processAnswer(txt) {
 }
 
 function finishInterview() {
-  addSys('[finishInterview called]');
   try {
   interviewActive=false;
-  el('interview-banner').style.display='none';
   el('progress-fill').style.width='100%';
   setChips(null);
 
@@ -988,7 +965,7 @@ function send() {
 
     if (s === 'restart' || s === 'restart interview' || s === 'start over') {
       interviewActive = false; interviewStep = 0; interviewAnswers = {}; userProfile = null;
-      el('progress-fill').style.width = '0%'; el('interview-banner').style.display = 'none';
+      el('progress-fill').style.width = '0%';
       el('summary-bar').style.display = 'none';
       el('answers-tile').style.display = 'none'; el('answers-tile').innerHTML = '';
       el('user-summary').style.display = 'none'; el('user-summary').innerHTML = '';
@@ -1048,21 +1025,20 @@ function send() {
       }
     }
 
-    // Post-interview free discussion or pre-interview chat
+    // Post-interview free discussion — LLM if available, else rule-based
     if (userProfile) {
-      // Interview done — engage conversationally, never re-rank from chat
-      showTyping();
-      chatLLM(txt).then(function(reply){
-        hideTyping();
-        if (reply) { addMsg(reply, 'bot'); }
-        else { addMsg("That's an interesting point. Try asking about electricity mix, charging habits, or how different driving patterns affect your CO\u2082 \u2014 I can talk through the trade-offs.", 'bot'); }
-        setChips([
-          {l:'How does my grid affect EVs?',q:'how does electricity source affect EV emissions'},
-          {l:'What if I charged more often?',q:'what if I charged daily instead'},
-          {l:'PHEV vs EV trade-offs',q:'compare PHEV versus EV for my profile'},
-          {l:'Restart',q:'restart'},
-        ]);
-      });
+      if (LLM_ENABLED) {
+        showTyping();
+        chatLLM(txt).then(function(reply){
+          hideTyping();
+          if (reply) addMsg(reply, 'bot');
+          else addFallbackMsg(txt);
+          setPostChips();
+        });
+      } else {
+        addFallbackMsg(txt);
+        setPostChips();
+      }
     } else {
       // No profile yet — push toward interview
       if (LLM_ENABLED) {
@@ -1077,6 +1053,29 @@ function send() {
 function showDefaultResponse() {
   addMsg("I'd love to help you find the right vehicle. The best way is through my short interview \u2014 it takes about a minute and gives you <strong>personalised</strong> real-world CO\u2082 estimates, not just EPA lab numbers. Ready to try?", 'bot');
   setChips([{l:'Start the interview',q:'restart'},{l:'Show EVs',q:'show EV'},{l:'How this works',q:'methodology'}]);
+}
+
+function addFallbackMsg(txt) {
+  var s = S(txt);
+  if (/grid|electricity|source|supply/.test(s))
+    addMsg("Your electricity carbon intensity affects how clean an EV is <em>for you</em>. On your grid (~"+userProfile.gridIntensity+" gCO\u2082/kWh), an EV's effective emissions are well below most combustion vehicles. If you switch to a green tariff, the EV advantage grows even larger.", 'bot');
+  else if (/charge|plug|more often|daily/.test(s))
+    addMsg("Charging more often is the single biggest lever for PHEV performance. With daily charging, a PHEV can run ~80%+ on electricity for typical trips. With rare charging, it operates mostly on petrol \u2014 losing most of the environmental benefit.", 'bot');
+  else if (/phev|hybrid|compare|vs|versus|trade.off/.test(s))
+    addMsg("EVs have zero tailpipe emissions but their real-world impact depends on your grid. PHEVs offer flexibility but only deliver their rated CO\u2082 if charged regularly. ICE vehicles are simpler but have no electric fallback \u2014 their real-world CO\u2082 is typically 15-20% above EPA lab figures.", 'bot');
+  else if (/mileage|annual|km|distance|drive/.test(s))
+    addMsg("Annual mileage is the biggest multiplier in your CO\u2082 calculation. At "+userProfile.annualKm+" km/year, every g/km difference between vehicles adds up fast. Reducing mileage where possible \u2014 carpooling, public transit, working from home \u2014 can cut your total footprint significantly.", 'bot');
+  else
+    addMsg("That's an interesting angle. You can also ask me about electricity mix, charging habits, PHEV vs EV trade-offs, or how different driving patterns affect your numbers. I'm here to talk through the trade-offs.", 'bot');
+}
+
+function setPostChips() {
+  setChips([
+    {l:'How does my grid affect EVs?',q:'how does electricity source affect EV emissions'},
+    {l:'What if I charged more often?',q:'what if I charged daily instead'},
+    {l:'PHEV vs EV trade-offs',q:'compare PHEV versus EV for my profile'},
+    {l:'Restart',q:'restart'},
+  ]);
 }
 
 function extractKeywords(txt) {
@@ -1192,26 +1191,6 @@ function hideModal(id) { el(id).classList.remove('show'); }
 document.addEventListener('DOMContentLoaded', function(){
   el('send-btn').addEventListener('click', send);
   el('inp').addEventListener('keydown', function(e){ if (e.key === 'Enter') send(); });
-
-  el('i-skip').addEventListener('click', function(){
-    interviewActive = false; el('interview-banner').style.display = 'none';
-    el('progress-fill').style.width = '0%';
-    setChips(null); userProfile = null;
-    powertrains = { ev:true, phev:true, ice:true, diesel:true };
-    minSeats = 5;
-    filters.bodyType = '';
-    syncFilterChips();
-    el('answers-tile').style.display = 'none'; el('answers-tile').innerHTML = '';
-    el('user-summary').style.display = 'none'; el('user-summary').innerHTML = '';
-    el('reflection-box').style.display = 'none';
-    el('car-grid').innerHTML = ''; el('empty-state').style.display = 'flex';
-    // Re-insert reflection box
-    var refl2 = document.createElement('div'); refl2.id = 'reflection-box';
-    el('car-grid').appendChild(refl2);
-    el('summary-bar').style.display = 'none';
-    addMsg("No problem! You can browse freely or describe what you're looking for. Say <strong>'restart'</strong> anytime to try the interview.", 'bot');
-    setChips([{l:'Show EVs',q:'show EV'},{l:'Start interview',q:'restart'},{l:'How this works',q:'methodology'}]);
-  });
 
   el('sort-select').addEventListener('change', onSortChange);
 
