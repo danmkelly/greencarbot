@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How This Works – GreenCarBot</title>
+<style>
+:root {
+  --bg:#0a0f0a; --panel:#0f170f; --border:#1a2e1a; --text:#c8d6c8;
+  --muted:#6b8a6b; --accent:#2ecc71; --accent2:#27ae60; --warn:#e67e22;
+  --radius:10px; --font:'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;overflow-y:auto}
+#brand{background:linear-gradient(135deg,#0a1a0a,#0d2a0d,#0a1a0a);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10}
+#brand .logo{font-size:24px}
+#brand h1{font-size:1rem;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#brand nav{margin-left:auto;display:flex;gap:16px}
+#brand nav a{color:var(--muted);text-decoration:none;font-size:0.8rem}
+#brand nav a:hover,#brand nav a.active{color:var(--accent)}
+main{max-width:800px;margin:0 auto;padding:32px 20px 64px}
+h1{font-size:1.5rem;color:var(--accent);margin-bottom:8px}
+h2{font-size:1.15rem;color:var(--accent);margin:32px 0 10px;padding-top:16px;border-top:1px solid var(--border)}
+h3{font-size:0.95rem;color:var(--text);margin:16px 0 6px}
+p{font-size:0.85rem;margin-bottom:12px;color:var(--text)}
+p.muted{color:var(--muted);font-size:0.8rem}
+ul,ol{padding-left:20px;margin-bottom:12px}
+li{font-size:0.85rem;margin-bottom:4px}
+code{background:var(--panel);padding:1px 5px;border-radius:4px;font-size:0.8rem;color:var(--accent)}
+pre{background:var(--panel);padding:14px;border-radius:var(--radius);overflow-x:auto;font-size:0.75rem;margin-bottom:12px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:0.8rem}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--accent);font-weight:600}
+.note{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin:16px 0;font-size:0.82rem}
+.note.warn{border-color:var(--warn);border-left:3px solid var(--warn)}
+.note.info{border-left:3px solid var(--accent)}
+.back{display:inline-block;margin-top:24px;color:var(--accent);text-decoration:none;font-size:0.85rem}
+.back:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<div id="brand">
+  <span class="logo">🌿</span>
+  <h1>GreenCarBot</h1>
+  <nav>
+    <a href="index.html">Advisor</a>
+    <a href="how-it-works.html" class="active">How This Works</a>
+  </nav>
+</div>
+
+<main>
+  <h1>How GreenCarBot Works</h1>
+  <p>GreenCarBot estimates <strong>your</strong> personalised real-world CO₂ emissions for any vehicle in the EPA catalogue. Unlike the EPA fuel economy label — which reports laboratory test results under ideal conditions — GreenCarBot adjusts for your driving behaviour, charging habits, and electricity source.</p>
+
+  <h2>1. Data Source</h2>
+  <p>All vehicle data comes from the <strong>EPA Fuel Economy Guide, Model Year 2025</strong> (public dataset). The original Excel workbook was processed to extract 1,410 consumer passenger vehicles across three powertrain types:</p>
+  <table>
+    <tr><th>Sheet</th><th>Powertrain</th><th>Vehicles</th></tr>
+    <tr><td>FEguide</td><td>ICE (internal combustion) + mild hybrid</td><td>~808</td></tr>
+    <tr><td>EV</td><td>Battery electric vehicles</td><td>~574</td></tr>
+    <tr><td>PHEV</td><td>Plug-in hybrid electric vehicles</td><td>~67</td></tr>
+  </table>
+  <p class="muted">Non-consumer vehicles (commercial vans, heavy-duty pickups, fleet-only vehicles, police/emergency) were excluded. Rows with missing fuel type or CO₂ values were removed.</p>
+
+  <h3>Data processing steps</h3>
+  <ol>
+    <li>CO₂ emissions converted from g/mi to g/km (÷ 1.60934)</li>
+    <li>Electric range converted from miles to km (× 1.60934)</li>
+    <li>Body type labels normalised ("Small SUV" → "SUV", "Large Car" → "Car")</li>
+    <li>Fuel type labels simplified (all gasoline grades → "Gasoline")</li>
+    <li>Seat counts enriched via vehicle-class heuristic with 50+ model-specific overrides from manufacturer specifications</li>
+    <li>PHEV composite CO₂ used (blended electric + gasoline operation)</li>
+  </ol>
+
+  <h2>2. How the Behaviour Model Works</h2>
+  <p>The core insight of GreenCarBot is that <strong>EPA laboratory values do not represent real-world driving</strong>. The model adjusts for:</p>
+
+  <h3>2.1 Real-World Fuel Consumption Adjustment</h3>
+  <p>Real-world fuel consumption is typically <strong>10–20% higher</strong> than EPA lab values due to:</p>
+  <ul>
+    <li>Real-world driving cycles (acceleration, speed, temperature, terrain)</li>
+    <li>Air conditioning and cabin heating loads</li>
+    <li>Cold starts and short trips</li>
+    <li>Tyre pressure, cargo weight, and driving style</li>
+  </ul>
+  <p>GreenCarBot applies a real-world adjustment factor of <strong>0.85</strong> to EPA MPG values (i.e., real-world MPG = EPA MPG × 0.85), consistent with findings from the ICCT and other independent studies.</p>
+
+  <h3>2.2 Electric-Mode Share (PHEV + BEV)</h3>
+  <p>For plug-in hybrids, the <strong>electric-mode share</strong> — how much of your driving is done on electricity versus petrol — is the single biggest determinant of real-world CO₂. It depends on:</p>
+  <ul>
+    <li><strong>Your charging frequency:</strong> daily charging → high electric share. Rare charging → near-zero electric share (PHEV operates as a conventional hybrid).</li>
+    <li><strong>Your typical trip length:</strong> if your trips are shorter than the PHEV's real-world electric range, a high electric share is achievable. Long motorway trips exceed battery range and force petrol operation.</li>
+    <li><strong>Real-world PHEV range:</strong> EPA electric range × 0.80 (lab range is optimistic; real-world range is typically 80% of EPA).</li>
+  </ul>
+  <p>The formula: <code>e_share = min(1.0, effective_range / trip_length) × charge_factor</code></p>
+
+  <div class="note info">
+    <strong>Real-world combined emissions:</strong><br>
+    <code>CO₂/km = (e_share × electricity_CO₂) + ((1 - e_share) × petrol_CO₂)</code>
+  </div>
+
+  <h3>2.3 Electricity Carbon Intensity</h3>
+  <p>An EV has <strong>zero tailpipe emissions</strong>, but the electricity that charges it has a carbon footprint. GreenCarBot asks for your electricity's carbon intensity in gCO₂/kWh:</p>
+  <table>
+    <tr><th>Grid type</th><th>Typical gCO₂/kWh</th><th>Example regions</th></tr>
+    <tr><td>Very green</td><td>~50</td><td>Nuclear-heavy (France), hydro-rich (Norway), 100% renewable tariff</td></tr>
+    <tr><td>Average grid</td><td>~300</td><td>EU average, Ireland, UK, most US states</td></tr>
+    <tr><td>Coal-heavy</td><td>~700</td><td>High-coal regions (parts of China, India, some US states)</td></tr>
+  </table>
+  <p>EV effective CO₂/km = grid_intensity × kWh_per_km. A typical EV uses ~0.15–0.20 kWh/km (real-world).</p>
+
+  <h3>2.4 Battery Embedded CO₂ (Lifecycle Amortisation)</h3>
+  <p>Manufacturing a battery produces CO₂ — approximately <strong>75 kg CO₂ per kWh</strong> of battery capacity (conservative estimate; range is 40–150 kg/kWh depending on manufacturing location and energy mix). GreenCarBot amortises this over your ownership period:</p>
+  <pre>embedded_per_year = (battery_kWh × 75) / ownership_years</pre>
+  <p>A 60 kWh EV battery represents ~4,500 kg of embedded CO₂. Over 10 years: 450 kg/year. Over 3 years: 1,500 kg/year. <strong>Longer ownership dramatically improves lifecycle performance.</strong></p>
+
+  <div class="note warn">
+    <strong>Important:</strong> This model covers battery manufacturing only. It does <strong>not</strong> include vehicle chassis/body manufacturing, raw material extraction, transport, or end-of-life disposal. Full lifecycle analysis (LCA) would show higher total emissions. The model is intentionally conservative: it likely <strong>underestimates</strong> total lifecycle CO₂.
+  </div>
+
+  <h2>3. Why PHEVs Often Underperform in Practice</h2>
+  <p>PHEVs (plug-in hybrids) have the <strong>largest gap between EPA ratings and real-world outcomes</strong>. Key reasons:</p>
+  <ol>
+    <li><strong>Charging behaviour:</strong> EPA assumes PHEVs are charged daily and drive ~55% of miles on electricity. Studies (ICCT, 2022) show real-world PHEV electric driving share is often <strong>half</strong> of EPA assumptions — many PHEVs are rarely or never plugged in.</li>
+    <li><strong>Company car incentives:</strong> In markets with tax incentives for low-CO₂ vehicles, PHEVs are often chosen for tax reasons, not environmental ones. The battery may never be used.</li>
+    <li><strong>Real-world range:</strong> PHEV electric range in real-world conditions (cold weather, highway speeds, cabin heating) is typically 60–80% of EPA lab range.</li>
+    <li><strong>Weight penalty:</strong> A PHEV carries both an engine and a battery, making it heavier than either a pure EV or a conventional vehicle. When running on petrol, it is <strong>less efficient</strong> than a comparable non-hybrid.</li>
+    <li><strong>Fuel consumption gap:</strong> The ICCT found real-world PHEV fuel consumption is <strong>2–4× higher</strong> than EPA type-approval values when not charged regularly.</li>
+  </ol>
+  <p class="muted">Sources: ICCT (2022) "Real-world usage of plug-in hybrid electric vehicles"; European Commission Joint Research Centre (2023).</p>
+
+  <h2>4. Known Weaknesses & Limitations</h2>
+  <div class="note warn">
+    <strong>This is a proof-of-concept. The model has significant limitations:</strong>
+  </div>
+  <ul>
+    <li><strong>No full lifecycle analysis:</strong> Excludes vehicle manufacturing (except battery), raw material extraction, transport, maintenance, and end-of-life. Total lifecycle CO₂ would be <strong>significantly higher</strong> than our estimates.</li>
+    <li><strong>Fixed real-world adjustment factors:</strong> The 0.85 MPG factor and 0.88 EV efficiency factor are averages. Individual driving style, climate, terrain, and maintenance can shift these dramatically.</li>
+    <li><strong>Simplified charging model:</strong> Our four-category charging frequency (daily/weekly/rarely/never) is coarse. Real charging behaviour is more nuanced.</li>
+    <li><strong>Static grid intensity:</strong> Electricity carbon intensity varies by time of day, season, and weather. We use a single user-provided value.</li>
+    <li><strong>No degradation modelling:</strong> Battery capacity degrades over time (~2% per year). Vehicle fuel efficiency degrades with age. Neither is modelled.</li>
+    <li><strong>EPA dataset limitations:</strong> Only MY2025 vehicles. No older models. No real-world fuel consumption data. EPA data is from laboratory tests using standardised driving cycles.</li>
+    <li><strong>Battery embedded CO₂ uncertainty:</strong> The 75 kg CO₂/kWh figure is a midpoint estimate. Published values range from 40 (clean manufacturing) to 150+ (coal-heavy manufacturing).</li>
+    <li><strong>No upstream fuel emissions:</strong> Excludes emissions from oil extraction, refining, and transport ("well-to-tank"). For gasoline, this adds approximately 20–25% to tailpipe CO₂.</li>
+  </ul>
+
+  <h2>5. Transparency Statement</h2>
+  <p>GreenCarBot is designed to be <strong>transparent about its limitations</strong>. Every recommendation includes:</p>
+  <ul>
+    <li>Why the vehicle was suggested (which factors drove its ranking)</li>
+    <li>EPA lab CO₂ versus real-world estimated CO₂ (side-by-side comparison)</li>
+    <li>Bias flags (charging behaviour, grid intensity, ownership period impacts)</li>
+    <li>Uncertainty notes (what the model does not capture)</li>
+  </ul>
+  <p>The model's assumptions are documented above. If you believe an assumption is wrong for your situation, adjust your answers in the interview — the model will recalculate.</p>
+
+  <h2>6. Bias Considerations</h2>
+  <p>Several biases are inherent in this model:</p>
+  <table>
+    <tr><th>Bias</th><th>Direction</th><th>Explanation</th></tr>
+    <tr><td>EV favouritism on clean grids</td><td>EV ↑</td><td>On grids below ~200 gCO₂/kWh, EVs outperform almost all combustion vehicles. This is directionally correct but may overstate the advantage when upstream electricity generation emissions are excluded.</td></tr>
+    <tr><td>PHEV penalty for rare charging</td><td>PHEV ↓</td><td>If you say you rarely charge, our model rates PHEVs poorly. This is evidence-based but may discourage PHEV adoption among users who <em>could</em> charge more.</td></tr>
+    <tr><td>Battery embedded CO₂ visibility</td><td>EV ↓ (short ownership)</td><td>Short ownership periods (3 years) make the battery embedded CO₂ appear high (~500 kg/year for a 20 kWh battery). This is mathematically correct but may overstate the marginal impact: the battery exists regardless of who owns the vehicle.</td></tr>
+    <tr><td>Diesel omission</td><td>Diesel (neutral)</td><td>Only 8 diesel vehicles in the MY2025 dataset. The model uses the same real-world adjustment as gasoline. Diesel NOx and particulate emissions are not modelled.</td></tr>
+    <tr><td>EPA laboratory bias</td><td>All vehicles ↓</td><td>EPA lab values systematically underestimate real-world fuel consumption and CO₂. Our 0.85 adjustment factor is an average; some vehicles deviate more, some less.</td></tr>
+  </table>
+
+  <h2>7. Future Improvements</h2>
+  <ul>
+    <li>Integrate real-world fuel consumption data (e.g., spritmonitor.de, Fuelly) for vehicle-specific adjustment factors</li>
+    <li>Add well-to-tank emissions (upstream fuel production)</li>
+    <li>Add time-of-day grid intensity data (marginal emissions, not average)</li>
+    <li>Model battery degradation and vehicle ageing</li>
+    <li>Add total cost of ownership (fuel + electricity + maintenance)</li>
+    <li>Support older model years and used vehicles</li>
+    <li>Dynamic grid intensity lookup by region (via Electricity Maps API)</li>
+    <li>Monte Carlo uncertainty visualisation on all estimates</li>
+  </ul>
+
+  <p><a href="index.html" class="back">← Back to the advisor</a></p>
+</main>
+</body>
+</html>
