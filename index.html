@@ -311,6 +311,7 @@ var PHEV_RANGE_REAL_FACTOR = 0.80;
 var allCars = [], userProfile = null, sending = false;
 var interviewActive = false, interviewStep = 0;
 var interviewAnswers = {};
+var singleQuestionMode = false;
 var powertrains = { ev:true, phev:true, ice:true, diesel:true };
 var minSeats = 5;
 var filters = { bodyType:'', sort:'personal' };
@@ -495,6 +496,12 @@ function processAnswer(txt) {
   if(parsed!==null) {
     interviewAnswers[q.id]=parsed;
     setChips(null);
+    if (singleQuestionMode) {
+      interviewActive = false; singleQuestionMode = false;
+      el('interview-banner').style.display = 'none';
+      handleUserSummaryEdit(idx, parsed);
+      return true;
+    }
     setTimeout(function(){ askQ(idx+1); },350);
     return true;
   }
@@ -916,7 +923,7 @@ function buildUserSummary() {
       var other = document.createElement('div');
       other.style.cssText = 'padding:4px 12px;font-size:0.65rem;cursor:pointer;white-space:nowrap;color:var(--muted);border-top:1px solid var(--border);margin-top:2px;padding-top:6px;';
       other.textContent = 'Other...';
-      other.onclick = function(ev){ ev.stopPropagation(); pop.remove(); interviewActive = true; interviewStep = item.qIdx; showBanner(item.qIdx); el('progress-fill').style.width = (item.qIdx/INTERVIEW.length*100)+'%'; addMsg('Let me re-ask: ' + INTERVIEW[item.qIdx].q, 'bot'); setChips(INTERVIEW[item.qIdx].chips); el('inp').focus(); };
+      other.onclick = function(ev){ ev.stopPropagation(); pop.remove(); singleQuestionMode = true; interviewActive = true; interviewStep = item.qIdx; showBanner(item.qIdx); el('progress-fill').style.width = (item.qIdx/INTERVIEW.length*100)+'%'; addMsg('Type your value for <strong>'+item.lbl+'</strong>:', 'bot'); setChips(null); el('inp').focus(); };
       pop.appendChild(other);
       wrap.appendChild(pop);
     };
