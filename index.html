@@ -24,7 +24,8 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); display
   display:flex; align-items:center; gap:10px; flex-shrink:0;
 }
 #brand .logo { font-size:24px; }
-#brand h1 { font-size:1rem; font-weight:700; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+#brand h1 { font-size:1rem; font-weight:700; }
+#brand h1 a { background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; text-decoration:none; }
 #brand .tag { font-size:0.7rem; color:var(--muted); }
 #brand nav { margin-left:auto; display:flex; gap:16px; }
 #brand nav a { color:var(--muted); text-decoration:none; font-size:0.75rem; transition:color 0.15s; }
@@ -65,6 +66,7 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); display
 #input-area { padding:10px 14px; border-top:1px solid var(--border); display:flex; gap:6px; flex-shrink:0; }
 #inp { flex:1; padding:8px 12px; border-radius:18px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-family:var(--font); font-size:0.82rem; outline:none; }
 #inp:focus { border-color:var(--accent); }
+#inp::placeholder { color:var(--muted); }
 #send-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border); background:var(--card); color:var(--text); cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:all 0.15s; flex-shrink:0; }
 #send-btn:hover { border-color:var(--accent); color:var(--accent); }
 #handoff { padding:6px 14px; text-align:center; font-size:0.65rem; color:var(--muted); border-top:1px solid var(--border); flex-shrink:0; }
@@ -83,12 +85,13 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); display
 #sort-select { padding:4px 8px; border-radius:6px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:0.7rem; cursor:pointer; }
 
 #filter-bar { display:flex; flex-wrap:wrap; gap:5px; padding:8px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
-.f-chip { font-size:0.65rem; padding:3px 7px; border-radius:10px; cursor:pointer; border:1px solid var(--border); background:var(--card); color:var(--muted); transition:all 0.15s; white-space:nowrap; }
+.f-chip { font-size:0.65rem; padding:3px 7px; border-radius:10px; cursor:pointer; border:1px solid var(--border); background:var(--card); color:var(--muted); transition:all 0.15s; white-space:nowrap; user-select:none; }
 .f-chip:hover { border-color:var(--accent); }
-.f-chip.active { border-color:var(--accent); color:#000; font-weight:600; }
-.f-chip.f-ev.active { background:var(--ev); }
-.f-chip.f-gas.active { background:var(--ice); }
-.f-chip.f-diesel.active { background:var(--diesel); }
+.f-chip.active { font-weight:600; }
+.f-chip.f-ev.active { background:var(--ev); color:#fff; border-color:var(--ev); }
+.f-chip.f-gas.active { background:var(--ice); color:#fff; border-color:var(--ice); }
+.f-chip.f-diesel.active { background:var(--diesel); color:#fff; border-color:var(--diesel); }
+.f-chip.f-body.active { background:var(--accent); color:#000; border-color:var(--accent); }
 
 #car-grid { flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:10px; }
 #car-grid::-webkit-scrollbar { width:4px; }
@@ -145,8 +148,8 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); display
 #summary-bar .row .val { font-weight:600; }
 
 /* Modal */
-.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:100; }
-.modal-overlay.hidden { display:none; }
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:100; }
+.modal-overlay.show { display:flex; }
 .modal { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:20px; max-width:460px; width:90%; max-height:80vh; overflow-y:auto; }
 .modal h3 { margin-bottom:10px; color:var(--accent); font-size:0.95rem; }
 .modal p { font-size:0.8rem; line-height:1.5; color:var(--text); margin-bottom:8px; }
@@ -168,7 +171,7 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); display
 <div id="brand">
   <span class="logo">🌿</span>
   <div>
-    <h1>GreenCarBot</h1>
+    <h1><a href="index.html">GreenCarBot</a></h1>
     <span class="tag">Real-world emissions, not just lab numbers</span>
   </div>
   <nav>
@@ -181,7 +184,7 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); display
   <div id="chat-panel">
     <div id="chat-top">
       <div id="chat-avatar">🌱</div>
-      <div><div id="chat-name">GreenCarBot</div><div id="chat-status">Ready</div></div>
+      <div><div id="chat-name">GreenCarBot</div><div id="chat-status">Loading data...</div></div>
     </div>
     <div id="progress-bar"><div id="progress-fill"></div></div>
     <div id="interview-banner">
@@ -192,31 +195,31 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); display
     <div id="messages" role="log" aria-label="Chat messages"></div>
     <div id="suggestions" class="suggestions"></div>
     <div id="input-area">
-      <input id="inp" type="text" placeholder="Describe your needs or answer the question above..." aria-label="Chat input">
+      <input id="inp" type="text" placeholder="Type your answer or describe your needs..." aria-label="Chat input">
       <button id="send-btn" title="Send">▶</button>
     </div>
-    <div id="handoff">⚡ <a onclick="showModal('modal-about')">About this tool</a> · Data from EPA MY2025</div>
+    <div id="handoff">⚡ <a id="about-link">About this tool</a> · Data from EPA MY2025</div>
   </div>
 
   <div id="results-panel">
-    <div id="load-overlay" class="hidden"><div class="spinner"></div><span style="font-size:0.75rem;color:var(--muted);">Loading EPA data...</span></div>
+    <div id="load-overlay"><div class="spinner"></div><span style="font-size:0.75rem;color:var(--muted);">Loading EPA data...</span></div>
     <div id="results-top">
-      <span id="results-count">1,410 vehicles loaded</span>
-      <select id="sort-select" onchange="onSort()">
+      <span id="results-count">Loading...</span>
+      <select id="sort-select">
         <option value="personal">Your CO₂: Lowest</option>
         <option value="epa">EPA CO₂: Lowest</option>
         <option value="gap">Real-world gap: Largest</option>
       </select>
     </div>
     <div id="filter-bar">
-      <span class="f-chip f-ev active" data-f="fuel" data-v="Electricity" onclick="tf(this)">⚡ EV</span>
-      <span class="f-chip f-gas active" data-f="fuel" data-v="Gasoline" onclick="tf(this)">⛽ Gas</span>
-      <span class="f-chip f-diesel active" data-f="fuel" data-v="Diesel" onclick="tf(this)">🛢 Diesel</span>
-      <span class="f-chip" data-f="body" data-v="SUV" onclick="tb(this)">SUV</span>
-      <span class="f-chip" data-f="body" data-v="Car" onclick="tb(this)">Car</span>
-      <span class="f-chip" data-f="body" data-v="Pickup" onclick="tb(this)">Pickup</span>
-      <span class="f-chip" data-f="body" data-v="Van" onclick="tb(this)">Van</span>
-      <span class="f-chip" data-f="body" data-v="Wagon" onclick="tb(this)">Wagon</span>
+      <span class="f-chip f-ev active" data-dim="fuel" data-val="Electricity">⚡ EV</span>
+      <span class="f-chip f-gas active" data-dim="fuel" data-val="Gasoline">⛽ Gas</span>
+      <span class="f-chip f-diesel active" data-dim="fuel" data-val="Diesel">🛢 Diesel</span>
+      <span class="f-chip f-body" data-dim="body" data-val="SUV">SUV</span>
+      <span class="f-chip f-body" data-dim="body" data-val="Car">Car</span>
+      <span class="f-chip f-body" data-dim="body" data-val="Pickup">Pickup</span>
+      <span class="f-chip f-body" data-dim="body" data-val="Van">Van</span>
+      <span class="f-chip f-body" data-dim="body" data-val="Wagon">Wagon</span>
     </div>
     <div id="car-grid"></div>
     <div id="empty-state">
@@ -228,9 +231,10 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); display
   </div>
 </div>
 
-<div id="modal-about" class="modal-overlay hidden">
+<!-- About modal -->
+<div id="modal-about" class="modal-overlay">
   <div class="modal">
-    <button class="close" onclick="hideModal('modal-about')">✕</button>
+    <button class="close" id="close-about">✕</button>
     <h3>About GreenCarBot</h3>
     <p><strong>Data source:</strong> EPA Fuel Economy Guide MY2025 (1,410 passenger vehicles).</p>
     <p><strong>What this does:</strong> Estimates <em>your</em> personalised real-world CO₂ emissions by combining EPA vehicle data with your driving behaviour, charging habits, and electricity source.</p>
@@ -240,177 +244,164 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); display
   </div>
 </div>
 
+<!-- config.js is optional - graceful degradation if missing -->
+<script>
+// Gracefully handle missing config.js
+if(typeof LLM_KEY==='undefined') var LLM_KEY='';
+if(typeof LLM_URL==='undefined') var LLM_URL='';
+if(typeof LLM_MODEL==='undefined') var LLM_MODEL='';
+if(typeof PROXY_URL==='undefined') var PROXY_URL='';
+</script>
 <script src="config.js"></script>
 <script>
-// =========================================================================
-// 1. CONFIG & CONSTANTS
-// =========================================================================
-const DATA_URL = 'epa_cars.json';
-const LLM_ENABLED = !!(typeof LLM_KEY !== 'undefined' && LLM_KEY) || !!(typeof PROXY_URL !== 'undefined' && PROXY_URL);
-const LLM_URL = typeof LLM_URL !== 'undefined' ? LLM_URL : '';
-const LLM_KEY = typeof LLM_KEY !== 'undefined' ? LLM_KEY : '';
-const LLM_MODEL = typeof LLM_MODEL !== 'undefined' ? LLM_MODEL : 'deepseek-chat';
-const PROXY = typeof PROXY_URL !== 'undefined' ? PROXY_URL : '';
-
-// Physical constants
-const GASOLINE_CO2_PER_L = 2347.0;    // g CO₂ per litre of gasoline
-const L_PER_100KM_FROM_MPG = 235.215; // L/100km = 235.215 / MPG(US)
-const BATTERY_EMBEDDED_CO2_PER_KWH = 75.0; // kg CO₂ per kWh (conservative estimate)
-const REAL_WORLD_MPG_FACTOR = 0.85;   // real-world MPG is ~85% of EPA lab value
-const REAL_WORLD_EV_FACTOR = 0.88;    // real-world EV efficiency ~88% of EPA
-const PHEV_RANGE_REAL_FACTOR = 0.80;  // real-world PHEV electric range ~80% of EPA
+'use strict';
 
 // =========================================================================
-// 2. STATE
+// CONFIG & CONSTANTS
 // =========================================================================
-let allCars = [], userProfile = null, sending = false;
-let interviewActive = false, interviewStep = 0;
-let interviewAnswers = {};
-let filters = { fuels:['Electricity','Gasoline','Diesel'], bodyType:'', sort:'personal' };
-let conv = [];
+var DATA_URL = 'epa_cars.json';
+var LLM_ENABLED = !!(LLM_KEY || PROXY_URL);
+var PROXY = PROXY_URL||'';
 
-const INTERVIEW = [
-  {
-    id:'annualKm', step:'1/6',
-    q:"How many kilometres do you drive per year? (This is the biggest factor in your total emissions.)",
-    parse(t){ let n=parseInt(t); if(n>=1000&&n<=100000) return n; let m=t.match(/(\d[\d,]*)/); return m?parseInt(m[1].replace(/,/g,'')):null; },
-    chips:[{l:'5,000 km (low)',q:'5000'},{l:'15,000 km (average)',q:'15000'},{l:'25,000 km (high)',q:'25000'},{l:'35,000+ km',q:'35000'}]
-  },
-  {
-    id:'tripLength', step:'2/6',
-    q:"What's your typical trip length? (This affects how much a PHEV can drive on electricity alone.)",
-    parse(t){ let s=t.toLowerCase(); if(/short|<.?30|local|around town|city/.test(s)) return 'short'; if(/medium|30.?80|commute|moderate/.test(s)) return 'medium'; if(/long|>.*80|highway|motorway/.test(s)) return 'long'; return null; },
-    chips:[{l:'Short (<30 km)',q:'short'},{l:'Medium (30-80 km)',q:'medium'},{l:'Long (>80 km)',q:'long'}]
-  },
-  {
-    id:'chargeFreq', step:'3/6',
-    q:"How often could you charge an electric or plug-in hybrid vehicle? (Daily charging dramatically reduces PHEV emissions.)",
-    parse(t){ let s=t.toLowerCase(); if(/daily|every day|every night|always|home/.test(s)) return 'daily'; if(/weekly|once a week|few times|sometimes/.test(s)) return 'weekly'; if(/rarely|seldom|occasional|hardly/.test(s)) return 'rarely'; if(/never|no|cannot|can't|won't/.test(s)) return 'never'; return null; },
-    chips:[{l:'Daily',q:'daily'},{l:'Weekly',q:'weekly'},{l:'Rarely',q:'rarely'},{l:'Never',q:'never'}]
-  },
-  {
-    id:'gridIntensity', step:'4/6',
-    q:"What's the carbon intensity of your electricity? (gCO₂/kWh. This determines how clean an EV actually is <em>for you</em>.)",
-    parse(t){ let s=t.toLowerCase(); let n=parseInt(t); if(!isNaN(n)&&n>=0&&n<=1000) return n; if(/very.*green|renewable|solar|wind|nuclear|clean|low|hydro|under.?50/.test(s)) return 50; if(/average|grid|normal|standard|typical|medium|~300|mix/.test(s)) return 300; if(/coal|dirty|high|fossil|heavy|~700|above/.test(s)) return 700; if(/ireland|eu|europe/.test(s)) return 300; return null; },
-    chips:[{l:'Very green (~50)',q:'50'},{l:'Average grid (~300)',q:'300'},{l:'Coal-heavy (~700)',q:'700'},{l:'Not sure (~400)',q:'400'}]
-  },
-  {
-    id:'ownershipYears', step:'5/6',
-    q:"How many years do you plan to keep the vehicle? (Longer ownership spreads the battery's manufacturing emissions over more years.)",
-    parse(t){ let n=parseInt(t); if(n>=1&&n<=30) return n; let m=t.match(/(\d+)/); return m?parseInt(m[1]):null; },
-    chips:[{l:'3 years',q:'3'},{l:'5 years',q:'5'},{l:'8 years',q:'8'},{l:'10+ years',q:'10'}]
-  },
-  {
-    id:'prefs', step:'6/6',
-    q:"Any vehicle preferences? Seats, body type, or fuel type openness? (e.g. '5 seats, SUV, open to EV or PHEV')",
-    parse(t){ return t.trim(); },
-    chips:[{l:'SUV only',q:'SUV, 5 seats'},{l:'7+ seats',q:'7 seats'},{l:'EV or PHEV only',q:'EV or PHEV'},{l:'No preference',q:'open to all'}]
-  }
+var GASOLINE_CO2_PER_L = 2347.0;
+var L_PER_100KM_FROM_MPG = 235.215;
+var BATTERY_EMBEDDED_CO2_PER_KWH = 75.0;
+var REAL_WORLD_MPG_FACTOR = 0.85;
+var REAL_WORLD_EV_FACTOR = 0.88;
+var PHEV_RANGE_REAL_FACTOR = 0.80;
+
+// =========================================================================
+// STATE
+// =========================================================================
+var allCars = [], userProfile = null, sending = false;
+var interviewActive = false, interviewStep = 0;
+var interviewAnswers = {};
+var filters = { fuels:['Electricity','Gasoline','Diesel'], bodyType:'', sort:'personal' };
+var conv = [];
+var appReady = false;
+
+var INTERVIEW = [
+  { id:'annualKm', step:'1/6', q:'How many kilometres do you drive per year? (This is the biggest factor in your total emissions.)',
+    parse:function(t){ var n=parseInt(t.replace(/,/g,'')); if(n>=1000&&n<=100000) return n; var m=t.match(/(\d[\d,]*)/); return m?parseInt(m[1].replace(/,/g,'')):null; },
+    chips:[{l:'5,000 km (low)',q:'5000'},{l:'15,000 km (average)',q:'15000'},{l:'25,000 km (high)',q:'25000'},{l:'35,000+ km',q:'35000'}] },
+  { id:'tripLength', step:'2/6', q:"What's your typical trip length? (This affects how much a PHEV can drive on electricity alone.)",
+    parse:function(t){ var s=t.toLowerCase(); if(/short|<.?30|local|around town|city|urban/.test(s)) return 'short'; if(/medium|30.?80|commute|moderate/.test(s)) return 'medium'; if(/long|>.*80|highway|motorway/.test(s)) return 'long'; return null; },
+    chips:[{l:'Short (<30 km)',q:'short'},{l:'Medium (30-80 km)',q:'medium'},{l:'Long (>80 km)',q:'long'}] },
+  { id:'chargeFreq', step:'3/6', q:'How often could you charge an electric or plug-in hybrid vehicle? (Daily charging dramatically reduces PHEV emissions.)',
+    parse:function(t){ var s=t.toLowerCase(); if(/daily|every day|every night|always|home/.test(s)) return 'daily'; if(/weekly|once a week|few times|sometimes/.test(s)) return 'weekly'; if(/rarely|seldom|occasional|hardly/.test(s)) return 'rarely'; if(/never|no|cannot|can't|won't/.test(s)) return 'never'; return null; },
+    chips:[{l:'Daily',q:'daily'},{l:'Weekly',q:'weekly'},{l:'Rarely',q:'rarely'},{l:'Never',q:'never'}] },
+  { id:'gridIntensity', step:'4/6', q:"What's the carbon intensity of your electricity? (gCO₂/kWh. This determines how clean an EV actually is <em>for you</em>.)",
+    parse:function(t){ var s=t.toLowerCase(); var n=parseInt(t); if(!isNaN(n)&&n>=0&&n<=1000) return n; if(/very.*green|renewable|solar|wind|nuclear|clean|low|hydro/.test(s)) return 50; if(/average|grid|normal|standard|typical|medium|mix|~300/.test(s)) return 300; if(/coal|dirty|high|fossil|heavy|~700/.test(s)) return 700; if(/ireland|eu|europe/.test(s)) return 300; return null; },
+    chips:[{l:'Very green (~50)',q:'50'},{l:'Average grid (~300)',q:'300'},{l:'Coal-heavy (~700)',q:'700'},{l:'Not sure (~400)',q:'400'}] },
+  { id:'ownershipYears', step:'5/6', q:'How many years do you plan to keep the vehicle? (Longer ownership spreads the battery\'s manufacturing emissions over more years.)',
+    parse:function(t){ var n=parseInt(t); if(n>=1&&n<=30) return n; var m=t.match(/(\d+)/); return m?parseInt(m[1]):null; },
+    chips:[{l:'3 years',q:'3'},{l:'5 years',q:'5'},{l:'8 years',q:'8'},{l:'10+ years',q:'10'}] },
+  { id:'prefs', step:'6/6', q:'Any vehicle preferences? Seats, body type, or fuel type openness? (e.g. "5 seats, SUV, open to EV or PHEV")',
+    parse:function(t){ return t.trim(); },
+    chips:[{l:'SUV only',q:'SUV, 5 seats'},{l:'7+ seats',q:'7 seats'},{l:'EV or PHEV only',q:'EV or PHEV'},{l:'No preference',q:'open to all'}] }
 ];
 
 // =========================================================================
-// 3. EMISSIONS MODEL (Fionn)
+// HELPERS
+// =========================================================================
+function el(id) { return document.getElementById(id); }
+function qs(sel) { return document.querySelector(sel); }
+function qsa(sel) { return document.querySelectorAll(sel); }
+function esc(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function S(s) { return (s||'').toString().toLowerCase().trim(); }
+function scrollChat() { var m=el('messages'); m.scrollTop=m.scrollHeight; }
+
+function addMsg(text, sender, whyNote) {
+  var m=document.createElement('div'); m.className='msg msg-'+sender;
+  if(sender==='bot') { var s=document.createElement('div'); s.className='speaker'; s.textContent='🌱 GreenCarBot'; m.appendChild(s); }
+  var p=document.createElement('div'); p.innerHTML=sender==='user'?esc(text):text;
+  m.appendChild(p);
+  if(whyNote) { var w=document.createElement('div'); w.className='why'; w.textContent=whyNote; m.appendChild(w); }
+  el('messages').appendChild(m); scrollChat();
+}
+function addSys(t) { var m=document.createElement('div'); m.className='msg msg-sys'; m.textContent=t; el('messages').appendChild(m); scrollChat(); }
+function showTyping() { var d=document.createElement('div'); d.className='typing'; d.id='typing-indicator'; d.innerHTML='<span></span><span></span><span></span>'; el('messages').appendChild(d); scrollChat(); }
+function hideTyping() { var t=el('typing-indicator'); if(t) t.remove(); }
+function setChips(arr) { var s=el('suggestions'); s.innerHTML=''; if(!arr) return; arr.forEach(function(c){ var sp=document.createElement('span'); sp.className='chip'; sp.textContent=c.l; sp.onclick=function(){ qa(c.q); }; s.appendChild(sp); }); }
+function qa(t) { el('inp').value=t; send(); }
+
+// =========================================================================
+// EMISSIONS MODEL
 // =========================================================================
 function computeEmissions(car, profile) {
-  const fuel = car['Fuel Type'];
-  const erange = car['Electric Range (km)'] || 0;
-  const batt = car['Battery Capacity (kWh)'] || 0;
-  const mpg = car['Combined MPG'] || 1;
-  const epaCo2 = car['CO2 Emissions (g/km)'] || 0;
+  var fuel = car['Fuel Type'];
+  var erange = car['Electric Range (km)'] || 0;
+  var batt = car['Battery Capacity (kWh)'] || 0;
+  var mpg = car['Combined MPG'] || 1;
+  var epaCo2 = car['CO2 Emissions (g/km)'] || 0;
 
-  let eShare = 0, eCo2PerKm = 0, pCo2PerKm = 0;
+  var eShare = 0, eCo2PerKm = 0, pCo2PerKm = 0;
 
   if (fuel === 'Electricity') {
     eShare = 1.0;
-    let kwhPerKm = batt > 0 && erange > 0 ? batt / erange : 0.18;
+    var kwhPerKm = batt > 0 && erange > 0 ? batt / erange : 0.18;
     eCo2PerKm = profile.gridIntensity * kwhPerKm / REAL_WORLD_EV_FACTOR;
   } else if (fuel === 'Gasoline' && erange > 1) {
-    // PHEV
-    let effRange = erange * PHEV_RANGE_REAL_FACTOR;
-    let maxEShare = Math.min(1.0, effRange / profile.tripLengthKm);
-    let chargeFactor = { daily:1.0, weekly:0.55, rarely:0.15, never:0.0 }[profile.chargeFreq] || 0;
+    var effRange = erange * PHEV_RANGE_REAL_FACTOR;
+    var maxEShare = Math.min(1.0, effRange / profile.tripLengthKm);
+    var chargeFactors = { daily:1.0, weekly:0.55, rarely:0.15, never:0.0 };
+    var chargeFactor = chargeFactors[profile.chargeFreq] || 0;
     eShare = maxEShare * chargeFactor;
-    let kwhPerKm = batt > 0 && erange > 0 ? batt / erange : 0.20;
-    eCo2PerKm = profile.gridIntensity * kwhPerKm;
+    var kwhPerKm2 = batt > 0 && erange > 0 ? batt / erange : 0.20;
+    eCo2PerKm = profile.gridIntensity * kwhPerKm2;
     pCo2PerKm = (GASOLINE_CO2_PER_L * L_PER_100KM_FROM_MPG / mpg / 100) / REAL_WORLD_MPG_FACTOR;
   } else {
     eShare = 0;
     pCo2PerKm = (GASOLINE_CO2_PER_L * L_PER_100KM_FROM_MPG / mpg / 100) / REAL_WORLD_MPG_FACTOR;
   }
 
-  let realWorldGPerKm = eShare * eCo2PerKm + (1 - eShare) * pCo2PerKm;
-  let embeddedPerYear = batt > 0 ? (batt * BATTERY_EMBEDDED_CO2_PER_KWH) / profile.ownershipYears : 0;
-  let yearlyKg = (realWorldGPerKm * profile.annualKm) / 1000 + embeddedPerYear;
-  let epaYearlyKg = (epaCo2 * profile.annualKm) / 1000;
-  let gap = yearlyKg - epaYearlyKg;
-  let gapPct = epaYearlyKg > 0 ? (gap / epaYearlyKg) * 100 : 0;
+  var realWorldGPerKm = eShare * eCo2PerKm + (1 - eShare) * pCo2PerKm;
+  var embeddedPerYear = batt > 0 ? (batt * BATTERY_EMBEDDED_CO2_PER_KWH) / profile.ownershipYears : 0;
+  var yearlyKg = (realWorldGPerKm * profile.annualKm) / 1000 + embeddedPerYear;
+  var epaYearlyKg = (epaCo2 * profile.annualKm) / 1000;
+  var gap = yearlyKg - epaYearlyKg;
+  var gapPct = epaYearlyKg > 0 ? (gap / epaYearlyKg) * 100 : 0;
 
-  return { eShare, eCo2PerKm, pCo2PerKm, realWorldGPerKm, embeddedPerYear, yearlyKg, epaYearlyKg, gap, gapPct };
+  return { eShare:eShare, eCo2PerKm:eCo2PerKm, pCo2PerKm:pCo2PerKm, realWorldGPerKm:realWorldGPerKm,
+           embeddedPerYear:embeddedPerYear, yearlyKg:yearlyKg, epaYearlyKg:epaYearlyKg,
+           gap:gap, gapPct:gapPct };
 }
 
 // =========================================================================
-// 4. HELPERS
-// =========================================================================
-const $ = s => document.querySelector(s);
-const $$ = s => document.querySelectorAll(s);
-const esc = s => { let d=document.createElement('div'); d.textContent=s; return d.innerHTML; };
-const S = s => (s||'').toString().toLowerCase().trim();
-const sc = () => { let m=$('#messages'); m.scrollTop=m.scrollHeight; };
-
-function addMsg(text, sender, why) {
-  let m=document.createElement('div'); m.className='msg msg-'+sender;
-  if(sender==='bot') { let s=document.createElement('div'); s.className='speaker'; s.textContent='🌱 GreenCarBot'; m.appendChild(s); }
-  let p=document.createElement('div'); p.innerHTML=sender==='user'?esc(text):text;
-  m.appendChild(p);
-  if(why) { let w=document.createElement('div'); w.className='why'; w.textContent=why; m.appendChild(w); }
-  $('#messages').appendChild(m); sc();
-}
-function addSys(t) { let m=document.createElement('div'); m.className='msg msg-sys'; m.textContent=t; $('#messages').appendChild(m); sc(); }
-function showTyping() { let d=document.createElement('div'); d.className='typing'; d.id='typing-indicator'; d.innerHTML='<span></span><span></span><span></span>'; $('#messages').appendChild(d); sc(); }
-function hideTyping() { let t=$('#typing-indicator'); if(t) t.remove(); }
-function chips(arr) { let s=$('#suggestions'); s.innerHTML=''; arr.forEach(c=>{ let el=document.createElement('span'); el.className='chip'; el.textContent=c.l; el.onclick=()=>qa(c.q); s.appendChild(el); }); }
-function qa(t) { $('#inp').value=t; send(); }
-function showModal(id) { $('#'+id).classList.remove('hidden'); }
-function hideModal(id) { $('#'+id).classList.add('hidden'); }
-$$('.modal-overlay').forEach(o=>o.addEventListener('click',function(e){if(e.target===this)this.classList.add('hidden');}));
-
-// =========================================================================
-// 5. INTERVIEW ENGINE (Dara)
+// INTERVIEW ENGINE
 // =========================================================================
 function startInterview() {
   interviewActive=true; interviewStep=0; interviewAnswers={};
-  $('#progress-fill').style.width='0%';
-  showBanner(0); askQ(0);
+  el('progress-fill').style.width='0%';
+  el('interview-banner').style.display='none';
+  askQ(0);
 }
 
 function showBanner(idx) {
-  if(idx>=INTERVIEW.length) { $('#interview-banner').style.display='none'; return; }
-  let q=INTERVIEW[idx];
-  $('#i-step').textContent=q.step;
-  $('#i-q').innerHTML=q.q;
-  $('#interview-banner').style.display='flex';
+  if(idx>=INTERVIEW.length) { el('interview-banner').style.display='none'; return; }
+  var q=INTERVIEW[idx];
+  el('i-step').textContent=q.step;
+  el('i-q').innerHTML=q.q;
+  el('interview-banner').style.display='flex';
 }
 
 function askQ(idx) {
   if(idx>=INTERVIEW.length) { finishInterview(); return; }
   interviewStep=idx;
   showBanner(idx);
-  $('#progress-fill').style.width=(idx/INTERVIEW.length*100)+'%';
-  addMsg(INTERVIEW[idx].q,'bot',INTERVIEW[idx].why||'');
-  chips(INTERVIEW[idx].chips);
+  el('progress-fill').style.width=(idx/INTERVIEW.length*100)+'%';
+  addMsg(INTERVIEW[idx].q,'bot');
+  setChips(INTERVIEW[idx].chips);
 }
 
 function processAnswer(txt) {
-  let idx=interviewStep;
+  var idx=interviewStep;
   if(idx>=INTERVIEW.length) return false;
-  let q=INTERVIEW[idx], parsed=q.parse(txt);
+  var q=INTERVIEW[idx], parsed=q.parse(txt);
   if(parsed!==null) {
     interviewAnswers[q.id]=parsed;
-    if(idx===0) interviewAnswers._annualKmRaw=parsed;
-    if(idx===1) interviewAnswers._tripLengthRaw=parsed;
-    if(idx===2) interviewAnswers._chargeFreqRaw=parsed;
-    chips([]);
-    setTimeout(()=>askQ(idx+1),350);
+    setChips(null);
+    setTimeout(function(){ askQ(idx+1); },350);
     return true;
   }
   return false;
@@ -418,12 +409,12 @@ function processAnswer(txt) {
 
 function finishInterview() {
   interviewActive=false;
-  $('#interview-banner').style.display='none';
-  $('#progress-fill').style.width='100%';
-  chips([]);
+  el('interview-banner').style.display='none';
+  el('progress-fill').style.width='100%';
+  setChips(null);
 
-  let a=interviewAnswers;
-  let tripKmMap={short:20,medium:55,long:120};
+  var a=interviewAnswers;
+  var tripKmMap={short:20,medium:55,long:120};
   userProfile={
     annualKm: a.annualKm||15000,
     tripLengthKm: tripKmMap[a.tripLength]||55,
@@ -434,7 +425,7 @@ function finishInterview() {
     prefsRaw: a.prefs||''
   };
 
-  let prefs=S(a.prefs||'');
+  var prefs=S(a.prefs||'');
   if(/suv/.test(prefs)) filters.bodyType='SUV';
   else if(/car/.test(prefs)&&!/suv/.test(prefs)) filters.bodyType='Car';
   else if(/pickup|truck/.test(prefs)) filters.bodyType='Pickup';
@@ -442,54 +433,92 @@ function finishInterview() {
   else if(/wagon/.test(prefs)) filters.bodyType='Wagon';
   else filters.bodyType='';
 
-  let seats=prefs.match(/(\d+)\s*seat/);
+  var seats=prefs.match(/(\d+)\s*seat/);
   if(seats) userProfile.minSeats=parseInt(seats[1]);
 
   if(/ev only|electric only|bev only/.test(prefs)) filters.fuels=['Electricity'];
-  else if(/phev|plug.in|hybrid/.test(prefs)&&!/ev only/.test(prefs)) filters.fuels=['Electricity','Gasoline'];
+  else if(/phev|plug[ -]?in|hybrid/.test(prefs)&&!/ev only/.test(prefs)) filters.fuels=['Electricity','Gasoline'];
   else if(/ice|petrol|gasoline|diesel/.test(prefs)&&!/ev|phev|electric/.test(prefs)) filters.fuels=['Gasoline','Diesel'];
 
   syncFilterChips();
   runRecommendation();
 }
 
+// =========================================================================
+// FILTER CHIPS
+// =========================================================================
 function syncFilterChips() {
-  $$('#filter-bar .f-chip[data-f="fuel"]').forEach(c=>{
-    c.classList.toggle('active',filters.fuels.includes(c.dataset.v));
+  qsa('#filter-bar .f-chip[data-dim="fuel"]').forEach(function(c){
+    c.classList.toggle('active',filters.fuels.indexOf(c.dataset.val)>=0);
   });
-  $$('#filter-bar .f-chip[data-f="body"]').forEach(c=>{
-    c.classList.toggle('active',filters.bodyType===c.dataset.v);
+  qsa('#filter-bar .f-chip[data-dim="body"]').forEach(function(c){
+    c.classList.toggle('active',filters.bodyType===c.dataset.val);
   });
 }
 
+function onFuelChip(el) {
+  el.classList.toggle('active');
+  filters.fuels=[];
+  qsa('#filter-bar .f-chip[data-dim="fuel"].active').forEach(function(c){ filters.fuels.push(c.dataset.val); });
+  if(filters.fuels.length===0) { el.classList.add('active'); filters.fuels=[el.dataset.val]; }
+  if(userProfile&&appReady) runRecommendation();
+}
+
+function onBodyChip(el) {
+  var was=el.classList.contains('active');
+  qsa('#filter-bar .f-chip[data-dim="body"]').forEach(function(c){ c.classList.remove('active'); });
+  if(was) { filters.bodyType=''; } else { el.classList.add('active'); filters.bodyType=el.dataset.val; }
+  if(userProfile&&appReady) runRecommendation();
+}
+
+function onSortChange() {
+  filters.sort=el('sort-select').value;
+  if(userProfile&&appReady) runRecommendation();
+}
+
 // =========================================================================
-// 6. RECOMMENDATION ENGINE (Dara + Fionn)
+// RECOMMENDATION ENGINE
 // =========================================================================
 function runRecommendation() {
-  if(!userProfile) return;
-  let candidates=[...allCars];
-  if(userProfile.minSeats) candidates=candidates.filter(c=>(c.Seats||5)>=userProfile.minSeats);
-  if(filters.bodyType) candidates=candidates.filter(c=>c['Body Type']===filters.bodyType);
-  if(filters.fuels.length<3) candidates=candidates.filter(c=>filters.fuels.includes(c['Fuel Type']));
+  if(!userProfile||!allCars.length) return;
+  var candidates=[];
+  for(var i=0;i<allCars.length;i++) {
+    var c=allCars[i];
+    if(userProfile.minSeats&&(c.Seats||5)<userProfile.minSeats) continue;
+    if(filters.bodyType&&c['Body Type']!==filters.bodyType) continue;
+    if(filters.fuels.length<3&&filters.fuels.indexOf(c['Fuel Type'])<0) continue;
+    candidates.push(c);
+  }
 
-  candidates.forEach(c=>{
-    let e=computeEmissions(c,userProfile);
-    c._yearlyKg=e.yearlyKg; c._epaYearly=e.epaYearlyKg;
-    c._gap=e.gap; c._gapPct=e.gapPct; c._eShare=e.eShare;
-    c._eCo2=e.eCo2PerKm; c._pCo2=e.pCo2PerKm;
-    c._embedded=e.embeddedPerYear; c._realWorld=e.realWorldGPerKm;
+  for(var j=0;j<candidates.length;j++) {
+    var e=computeEmissions(candidates[j],userProfile);
+    candidates[j]._yearlyKg=e.yearlyKg;
+    candidates[j]._epaYearly=e.epaYearlyKg;
+    candidates[j]._gap=e.gap;
+    candidates[j]._gapPct=e.gapPct;
+    candidates[j]._eShare=e.eShare;
+    candidates[j]._eCo2=e.eCo2PerKm;
+    candidates[j]._pCo2=e.pCo2PerKm;
+    candidates[j]._embedded=e.embeddedPerYear;
+    candidates[j]._realWorld=e.realWorldGPerKm;
+  }
+
+  candidates.sort(function(a,b){ return a._yearlyKg-b._yearlyKg; });
+  var top=candidates.slice(0,5);
+  for(var k=0;k<top.length;k++) top[k]._rank=k+1;
+
+  var msg='Here are your <strong>top '+top.length+' vehicles</strong> ranked by <em>your</em> personalised real-world CO₂ emissions:<br><br>';
+  top.forEach(function(c,i){
+    var medal=i===0?'\u{1F947}':i===1?'\u{1F948}':i===2?'\u{1F949}':'';
+    var ft=c['Fuel Type']==='Electricity'?'\u26A1':c['Fuel Type']==='Diesel'?'\uD83D\uDEE2':'\u26FD';
+    msg+=medal+' <strong>#'+(i+1)+':</strong> '+c.Make+' '+c.Model+' \u2014 '+ft+' ~'+c._yearlyKg.toFixed(0)+' kg CO\u2082/year<br>';
   });
-
-  candidates.sort((a,b)=>a._yearlyKg-b._yearlyKg);
-  let top=candidates.slice(0,5);
-  top.forEach((c,i)=>{ c._rank=i+1; });
-
-  let msg=txtRecommendation(top);
+  msg+='<br><em>Based on: '+userProfile.annualKm+' km/year, '+userProfile.tripLengthLabel+' trips, '+userProfile.chargeFreq+' charging, '+userProfile.gridIntensity+' gCO\u2082/kWh grid, '+userProfile.ownershipYears+'-year ownership.</em>';
   addMsg(msg,'bot');
-  chips([
+  setChips([
     {l:'Explain the top pick',q:'explain #1'},
-    {l:'Show me EV comparison',q:'compare EV vs PHEV vs ICE'},
-    {l:'Adjust my answers',q:'restart interview'},
+    {l:'Show EV vs PHEV vs ICE',q:'compare ev vs phev vs ice'},
+    {l:'Adjust my answers',q:'restart'},
     {l:'How this works',q:'methodology'},
   ]);
 
@@ -497,300 +526,324 @@ function runRecommendation() {
   updateSummary(top);
 }
 
-function txtRecommendation(top) {
-  let p=userProfile;
-  let m=`Here are your <strong>top ${top.length} vehicles</strong> ranked by <em>your</em> personalised real-world CO₂ emissions:<br><br>`;
-  top.forEach((c,i)=>{
-    let medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
-    let ft=c['Fuel Type']==='Electricity'?'⚡':c['Fuel Type']==='Diesel'?'🛢':'⛽';
-    m+=`${medal} <strong>#${i+1}:</strong> ${c.Make} ${c.Model} — ${ft} ~${c._yearlyKg.toFixed(0)} kg CO₂/year<br>`;
-  });
-  m+=`<br><em>Based on: ${p.annualKm} km/year, ${p.tripLengthLabel} trips, ${p.chargeFreq} charging, ${p.gridIntensity} gCO₂/kWh grid, ${p.ownershipYears}-year ownership.</em>`;
-  return m;
-}
-
-function txtExplain(car) {
-  let p=userProfile;
-  let ft=car['Fuel Type'];
-  let lines=[];
-  lines.push(`<strong>Why this vehicle?</strong> `);
-  if(ft==='Electricity') {
-    if(p.gridIntensity<=100) lines.push(`This EV has <strong>zero tailpipe emissions</strong> and your electricity is relatively clean (${p.gridIntensity} gCO₂/kWh), making it the strongest environmental choice for your profile.`);
-    else lines.push(`This EV has zero tailpipe emissions. Your grid at ${p.gridIntensity} gCO₂/kWh means effective emissions are ~${car._realWorld.toFixed(0)} g/km — still lower than most combustion vehicles.`);
-  } else if(car['Electric Range (km)']>1) {
-    let es=car._eShare;
-    if(es>0.5) lines.push(`As a PHEV, this vehicle can complete ~${(es*100).toFixed(0)}% of your typical ${p.tripLengthKm} km trip on electricity given your <strong>${p.chargeFreq}</strong> charging habit. This dramatically reduces your real-world fuel consumption.`);
-    else lines.push(`As a PHEV with ${p.chargeFreq} charging, only ~${(es*100).toFixed(0)}% of your driving is electric. <strong>More frequent charging would significantly improve this.</strong>`);
-  } else {
-    lines.push(`This is a conventional vehicle. Its real-world CO₂ is estimated at ${car._realWorld.toFixed(0)} g/km — approximately ${((1/REAL_WORLD_MPG_FACTOR-1)*100).toFixed(0)}% above the EPA lab figure of ${car['CO2 Emissions (g/km)']} g/km due to real-world driving conditions.`);
-  }
-  lines.push(`<br><strong>EPA gap:</strong> EPA lab rates this at ${car._epaYearly.toFixed(0)} kg/year. Your real‑world estimate is ${car._yearlyKg.toFixed(0)} kg/year — a difference of ${Math.abs(car._gap).toFixed(0)} kg (${Math.abs(car._gapPct).toFixed(0)}%).`);
-  if(car['Battery Capacity (kWh)']>0) {
-    lines.push(`<br><strong>Battery embedded CO₂:</strong> ~${car._embedded.toFixed(0)} kg/year amortised over ${p.ownershipYears} years (${(car['Battery Capacity (kWh)']*BATTERY_EMBEDDED_CO2_PER_KWH).toFixed(0)} kg total).`);
-  }
-  return lines.join(' ');
-}
-
-function txtFlags(car) {
-  let flags=[], p=userProfile;
-  if(car['Fuel Type']==='Electricity'&&p.gridIntensity>=500) flags.push('⚠ High grid intensity reduces EV benefit');
-  if(car['Electric Range (km)']>1&&p.chargeFreq==='rarely') flags.push('⚠ Rare charging — PHEV likely running on petrol');
-  if(car['Electric Range (km)']>1&&p.chargeFreq==='never') flags.push('⚠ No charging — PHEV operates as a conventional hybrid');
-  if(car['Fuel Type']!=='Electricity'&&car['Electric Range (km)']<=1&&car['Combined MPG']<25) flags.push('⚠ High fuel consumption in real-world conditions');
-  if(p.ownershipYears<=3&&car['Battery Capacity (kWh)']>30) flags.push('⚠ Short ownership amplifies battery embedded CO₂ impact');
-  flags.push('ℹ EPA values are laboratory estimates; real-world varies');
-  return flags;
-}
-
-// =========================================================================
-// 7. RENDER RESULTS (Siobhan)
-// =========================================================================
 function renderResults(cars) {
-  let grid=$('#car-grid'), empty=$('#empty-state');
+  var grid=el('car-grid'), empty=el('empty-state');
   grid.innerHTML='';
-  if(!cars.length) { empty.style.display='flex'; grid.style.display='none'; $('#results-count').textContent='No vehicles match'; return; }
+  if(!cars||!cars.length) {
+    empty.style.display='flex'; grid.style.display='none';
+    el('results-count').textContent='No vehicles match';
+    return;
+  }
   empty.style.display='none'; grid.style.display='flex';
-  $('#results-count').textContent=cars.length+' recommended';
+  el('results-count').textContent=cars.length+' recommended';
 
-  let maxCo2=Math.max(...cars.map(c=>c._yearlyKg||0),1);
+  var maxCo2=0;
+  cars.forEach(function(c){ if(c._yearlyKg>maxCo2) maxCo2=c._yearlyKg; });
+  if(maxCo2===0) maxCo2=1;
 
-  cars.forEach(c=>{
-    let card=document.createElement('div');
+  cars.forEach(function(c){
+    var card=document.createElement('div');
     card.className='car-card'+(c._rank&&c._rank<=3?' top':'');
-    let rc=c._rank===1?'rank-1':c._rank===2?'rank-2':c._rank===3?'rank-3':'';
-    let ft=c['Fuel Type'], fb='';
+    var rc=c._rank===1?'rank-1':c._rank===2?'rank-2':c._rank===3?'rank-3':'';
+    var ft=c['Fuel Type'], fb='';
     if(ft==='Electricity') fb='ev';
     else if(c['Electric Range (km)']>1) fb='phev';
     else if(ft==='Diesel') fb='diesel';
     else fb='gas';
-    let ftLabel=ft==='Electricity'?'EV':ft==='Diesel'?'Diesel':c['Electric Range (km)']>1?'PHEV':'Gas';
+    var ftLabel=ft==='Electricity'?'EV':ft==='Diesel'?'Diesel':c['Electric Range (km)']>1?'PHEV':'Gas';
 
-    let yr=c._yearlyKg||0, ey=c._epaYearly||0;
-    let yrPct=Math.min(100,(yr/maxCo2)*100);
-    let epPct=ey>0?Math.min(100,(ey/maxCo2)*100):0;
+    var yr=c._yearlyKg||0, ey=c._epaYearly||0;
+    var yrPct=Math.min(100,(yr/maxCo2)*100);
+    var epPct=ey>0?Math.min(100,(ey/maxCo2)*100):0;
 
-    let explain=txtExplain(c);
-    let flags=txtFlags(c);
+    var explain=buildExplain(c);
+    var flags=buildFlags(c);
 
-    card.innerHTML=`
-      <div class="header">
-        ${c._rank?`<span class="rank ${rc}">${c._rank}</span>`:''}
-        <h4>${esc(c.Make)}</h4>
-        <span class="model">${esc(c.Model)}</span>
-        <span class="fuel-badge ${fb}">${ftLabel}</span>
-      </div>
-      <div class="specs-row">
-        <div><span class="lbl">Class</span> <span class="val">${esc(c['Vehicle Class'])}</span></div>
-        <div><span class="lbl">Seats</span> <span class="val">${c.Seats||5}</span></div>
-        <div><span class="lbl">MPG</span> <span class="val">${c['Combined MPG']||'-'}</span></div>
-        <div><span class="lbl">Drive</span> <span class="val">${esc(c['Drive Type'])}</span></div>
-        ${c['Electric Range (km)']>0?`<div><span class="lbl">E-Range</span> <span class="val">${c['Electric Range (km)'].toFixed(0)} km</span></div>`:''}
-        ${c['Battery Capacity (kWh)']>0?`<div><span class="lbl">Battery</span> <span class="val">${c['Battery Capacity (kWh)'].toFixed(1)} kWh</span></div>`:''}
-      </div>
-      <div class="compare">
-        <div class="col">
-          <h5>🏷 EPA Lab CO₂</h5>
-          <div class="val">${ey.toFixed(0)} kg/year</div>
-          <div class="bar-wrap"><div class="bar-fill bar-epa" style="width:${epPct}%"></div></div>
-        </div>
-        <div class="col">
-          <h5>🌍 Your Real-World CO₂</h5>
-          <div class="val" style="color:${yr>ey?'var(--warn)':'var(--accent)'}">${yr.toFixed(0)} kg/year</div>
-          <div class="bar-wrap"><div class="bar-fill bar-real" style="width:${yrPct}%"></div></div>
-        </div>
-      </div>
-      ${yr>ey?`<div class="bar-wrap"><div class="bar-fill bar-worse" style="width:${Math.min(100,((yr-ey)/ey)*100)}%"></div></div><div style="font-size:0.6rem;color:var(--warn);margin-top:2px;">+${Math.abs(c._gapPct).toFixed(0)}% above EPA lab (real-world gap)</div>`:''}
-      <div class="explain">${explain}</div>
-      ${flags.length?`<div class="flags">${flags.map(f=>`<span class="flag">${f}</span>`).join('')}</div>`:''}
-    `;
+    card.innerHTML=
+      '<div class="header">'+
+        (c._rank?'<span class="rank '+rc+'">'+c._rank+'</span>':'')+
+        '<h4>'+esc(c.Make)+'</h4>'+
+        '<span class="model">'+esc(c.Model)+'</span>'+
+        '<span class="fuel-badge '+fb+'">'+ftLabel+'</span>'+
+      '</div>'+
+      '<div class="specs-row">'+
+        '<div><span class="lbl">Class</span> <span class="val">'+esc(c['Vehicle Class'])+'</span></div>'+
+        '<div><span class="lbl">Seats</span> <span class="val">'+(c.Seats||5)+'</span></div>'+
+        '<div><span class="lbl">MPG</span> <span class="val">'+(c['Combined MPG']||'-')+'</span></div>'+
+        '<div><span class="lbl">Drive</span> <span class="val">'+esc(c['Drive Type'])+'</span></div>'+
+        (c['Electric Range (km)']>0?'<div><span class="lbl">E-Range</span> <span class="val">'+c['Electric Range (km)'].toFixed(0)+' km</span></div>':'')+
+        (c['Battery Capacity (kWh)']>0?'<div><span class="lbl">Battery</span> <span class="val">'+c['Battery Capacity (kWh)'].toFixed(1)+' kWh</span></div>':'')+
+      '</div>'+
+      '<div class="compare">'+
+        '<div class="col"><h5>EPA Lab CO\u2082</h5><div class="val">'+ey.toFixed(0)+' kg/year</div><div class="bar-wrap"><div class="bar-fill bar-epa" style="width:'+epPct+'%"></div></div></div>'+
+        '<div class="col"><h5>Your Real-World CO\u2082</h5><div class="val" style="color:'+(yr>ey?'var(--warn)':'var(--accent)')+'">'+yr.toFixed(0)+' kg/year</div><div class="bar-wrap"><div class="bar-fill bar-real" style="width:'+yrPct+'%"></div></div></div>'+
+      '</div>'+
+      (yr>ey?'<div class="bar-wrap"><div class="bar-fill bar-worse" style="width:'+Math.min(100,((yr-ey)/ey)*100)+'%"></div></div><div style="font-size:0.6rem;color:var(--warn);margin-top:2px;">+'+Math.abs(c._gapPct).toFixed(0)+'% above EPA lab (real-world gap)</div>':'')+
+      '<div class="explain">'+explain+'</div>'+
+      (flags.length?'<div class="flags">'+flags.map(function(f){ return '<span class="flag">'+f+'</span>'; }).join('')+'</div>':'');
     grid.appendChild(card);
   });
 }
 
 function updateSummary(top) {
-  let sb=$('#summary-bar');
+  var sb=el('summary-bar');
   if(!top.length) { sb.style.display='none'; return; }
   sb.style.display='block';
-  let best=top[0], p=userProfile;
-  sb.innerHTML=`
-    <div class="row"><span class="lbl">Your top pick</span><span class="val">${esc(best.Make)} ${esc(best.Model)}</span></div>
-    <div class="row"><span class="lbl">Your real-world CO₂</span><span class="val">~${best._yearlyKg.toFixed(0)} kg/year</span></div>
-    <div class="row"><span class="lbl">EPA lab CO₂</span><span class="val">~${best._epaYearly.toFixed(0)} kg/year</span></div>
-    <div class="row"><span class="lbl">Real-world gap</span><span class="val">+${Math.abs(best._gapPct).toFixed(0)}% above EPA</span></div>
-    <div class="row"><span class="lbl">Based on</span><span class="val">${p.annualKm} km/yr · ${p.tripLengthLabel} trips · ${p.chargeFreq} charging · ${p.gridIntensity} gCO₂/kWh</span></div>
-  `;
+  var best=top[0], p=userProfile;
+  sb.innerHTML=
+    '<div class="row"><span class="lbl">Your top pick</span><span class="val">'+esc(best.Make)+' '+esc(best.Model)+'</span></div>'+
+    '<div class="row"><span class="lbl">Your real-world CO\u2082</span><span class="val">~'+best._yearlyKg.toFixed(0)+' kg/year</span></div>'+
+    '<div class="row"><span class="lbl">EPA lab CO\u2082</span><span class="val">~'+best._epaYearly.toFixed(0)+' kg/year</span></div>'+
+    '<div class="row"><span class="lbl">Real-world gap</span><span class="val">+'+Math.abs(best._gapPct).toFixed(0)+'% above EPA</span></div>'+
+    '<div class="row"><span class="lbl">Based on</span><span class="val">'+p.annualKm+' km/yr, '+p.tripLengthLabel+' trips, '+p.chargeFreq+' charging, '+p.gridIntensity+' gCO\u2082/kWh</span></div>';
+}
+
+function buildExplain(car) {
+  var p=userProfile, ft=car['Fuel Type'], lines=[];
+  lines.push('<strong>Why this vehicle?</strong> ');
+  if(ft==='Electricity') {
+    if(p.gridIntensity<=100) lines.push('This EV has <strong>zero tailpipe emissions</strong> and your electricity is relatively clean ('+p.gridIntensity+' gCO\u2082/kWh), making it the strongest environmental choice for your profile.');
+    else lines.push('This EV has zero tailpipe emissions. Your grid at '+p.gridIntensity+' gCO\u2082/kWh means effective emissions are ~'+car._realWorld.toFixed(0)+' g/km.');
+  } else if(car['Electric Range (km)']>1) {
+    var es=car._eShare;
+    if(es>0.5) lines.push('As a PHEV, this vehicle can complete ~'+(es*100).toFixed(0)+'% of your typical '+p.tripLengthKm+' km trip on electricity given your <strong>'+p.chargeFreq+'</strong> charging habit.');
+    else lines.push('As a PHEV with '+p.chargeFreq+' charging, only ~'+(es*100).toFixed(0)+'% of your driving is electric. <strong>More frequent charging would significantly improve this.</strong>');
+  } else {
+    lines.push('Conventional vehicle. Real-world CO\u2082 is ~'+car._realWorld.toFixed(0)+' g/km \u2014 approximately '+((1/REAL_WORLD_MPG_FACTOR-1)*100).toFixed(0)+'% above the EPA lab figure of '+car['CO2 Emissions (g/km)']+' g/km.');
+  }
+  lines.push('<br><strong>EPA gap:</strong> EPA lab: '+car._epaYearly.toFixed(0)+' kg/year. Your real-world: '+car._yearlyKg.toFixed(0)+' kg/year \u2014 difference of '+Math.abs(car._gap).toFixed(0)+' kg ('+Math.abs(car._gapPct).toFixed(0)+'%).');
+  if(car['Battery Capacity (kWh)']>0) {
+    lines.push('<br><strong>Battery embedded CO\u2082:</strong> ~'+car._embedded.toFixed(0)+' kg/year over '+p.ownershipYears+' years ('+(car['Battery Capacity (kWh)']*BATTERY_EMBEDDED_CO2_PER_KWH).toFixed(0)+' kg total).');
+  }
+  return lines.join(' ');
+}
+
+function buildFlags(car) {
+  var flags=[], p=userProfile;
+  if(car['Fuel Type']==='Electricity'&&p.gridIntensity>=500) flags.push('High grid intensity reduces EV benefit');
+  if(car['Electric Range (km)']>1&&p.chargeFreq==='rarely') flags.push('Rare charging: PHEV likely running on petrol');
+  if(car['Electric Range (km)']>1&&p.chargeFreq==='never') flags.push('No charging: PHEV operates as conventional hybrid');
+  if(car['Fuel Type']!=='Electricity'&&(car['Electric Range (km)']||0)<=1&&car['Combined MPG']<25) flags.push('High fuel consumption in real-world conditions');
+  if(p.ownershipYears<=3&&car['Battery Capacity (kWh)']>30) flags.push('Short ownership amplifies battery embedded CO\u2082');
+  flags.push('EPA values are lab estimates; real-world varies');
+  return flags;
 }
 
 // =========================================================================
-// 8. FILTERS
+// SEND / MAIN LOOP
 // =========================================================================
-function tf(el) {
-  el.classList.toggle('active');
-  filters.fuels=[];
-  $$('#filter-bar .f-chip[data-f="fuel"].active').forEach(c=>filters.fuels.push(c.dataset.v));
-  if(userProfile) runRecommendation();
-}
-function tb(el) {
-  let was=el.classList.contains('active');
-  $$('#filter-bar .f-chip[data-f="body"]').forEach(c=>c.classList.remove('active'));
-  if(was) { filters.bodyType=''; } else { el.classList.add('active'); filters.bodyType=el.dataset.v; }
-  if(userProfile) runRecommendation();
-}
-function onSort() {
-  filters.sort=$('#sort-select').value;
-  if(userProfile) runRecommendation();
-}
-
-// =========================================================================
-// 9. LLM
-// =========================================================================
-async function chatLLM(msg) {
-  conv.push({role:'user',content:msg});
-  if(conv.length>20) conv=conv.slice(-20);
-  let body=JSON.stringify({model:LLM_MODEL,messages:[
-    {role:'system',content:`You are GreenCarBot, an environmental vehicle advisor. You explain real-world CO₂ emissions, EPA lab vs reality gaps, and why PHEVs often underperform when not charged. Keep responses to 2-4 sentences. Be humble: acknowledge limitations. Never give financial or purchasing advice. No em dashes. No markdown.`},
-    ...conv
-  ],temperature:0.7,max_tokens:300});
-  try {
-    let url=PROXY?PROXY+'/api/llm':LLM_URL;
-    let headers={'Content-Type':'application/json'};
-    if(!PROXY&&LLM_KEY) headers['Authorization']='Bearer '+LLM_KEY;
-    let r=await fetch(url,{method:'POST',headers,body});
-    if(!r.ok) return null;
-    let j=await r.json();
-    let reply=j.choices?.[0]?.message?.content;
-    if(reply) { conv.push({role:'assistant',content:reply}); if(conv.length>20) conv=conv.slice(-20); }
-    return reply;
-  } catch(e) { return null; }
-}
-
-// =========================================================================
-// 10. SEND / MAIN LOOP (Dara)
-// =========================================================================
-async function send() {
+function send() {
   if(sending) return;
-  let inp=$('#inp'), txt=inp.value.trim(); if(!txt) return;
+  var inp=el('inp'), txt=inp.value.trim(); if(!txt) return;
   inp.value=''; sending=true;
   try {
-    addMsg(txt,'user'); chips([]);
-    let s=S(txt);
+    addMsg(txt,'user'); setChips(null);
+    var s=S(txt);
 
     if(s==='restart'||s==='restart interview'||s==='start over') {
       interviewActive=false; interviewStep=0; interviewAnswers={}; userProfile=null;
-      $('#progress-fill').style.width='0%'; $('#interview-banner').style.display='none';
-      $('#summary-bar').style.display='none';
+      el('progress-fill').style.width='0%'; el('interview-banner').style.display='none';
+      el('summary-bar').style.display='none';
       filters={fuels:['Electricity','Gasoline','Diesel'],bodyType:'',sort:'personal'};
       syncFilterChips();
-      renderResults([]); $('#results-count').textContent='1,410 vehicles loaded';
+      el('car-grid').innerHTML=''; el('empty-state').style.display='flex';
+      el('results-count').textContent=allCars.length.toLocaleString()+' vehicles loaded';
       startInterview(); sending=false; return;
     }
     if(s==='methodology'||s==='how this works') { window.location.href='how-it-works.html'; sending=false; return; }
-    if(s==='explain #1') { if(userProfile) { let top=allCars.filter(c=>c._rank===1); if(top.length) addMsg(txtExplain(top[0]),'bot'); } sending=false; return; }
+    if(s==='explain #1') {
+      if(userProfile) {
+        var ranked=allCars.filter(function(c){ return c._rank===1; });
+        if(ranked.length) addMsg(buildExplain(ranked[0]),'bot');
+      }
+      sending=false; return;
+    }
     if(s==='compare ev vs phev vs ice') { showComparison(); sending=false; return; }
 
     if(interviewActive) {
       if(processAnswer(txt)) { sending=false; return; }
       addMsg("I didn't quite catch that. Could you try one of the options below?",'bot');
-      chips(INTERVIEW[interviewStep].chips);
+      setChips(INTERVIEW[interviewStep].chips);
       sending=false; return;
     }
 
-    // Free chat mode
-    let kw=extractKeywords(txt);
+    // Free chat / keyword extraction
+    var kw=extractKeywords(txt);
     if(kw.fuels.length||kw.bodyType||kw.seats) {
       if(kw.fuels.length) filters.fuels=kw.fuels;
       if(kw.bodyType) filters.bodyType=kw.bodyType;
-      if(kw.seats&&!userProfile) userProfile={annualKm:15000,tripLengthKm:55,tripLengthLabel:'medium',chargeFreq:'weekly',gridIntensity:300,ownershipYears:5,prefsRaw:'',minSeats:kw.seats};
-      else if(kw.seats&&userProfile) userProfile.minSeats=kw.seats;
+      if(kw.seats) {
+        if(!userProfile) userProfile={annualKm:15000,tripLengthKm:55,tripLengthLabel:'medium',chargeFreq:'weekly',gridIntensity:300,ownershipYears:5,prefsRaw:'',minSeats:kw.seats};
+        else userProfile.minSeats=kw.seats;
+      }
       syncFilterChips();
       if(userProfile) runRecommendation();
-      else addMsg("I've updated the filters. To get personalised CO₂ estimates, let me ask you a few quick questions first.",'bot');
-      chips([{l:'Start the interview',q:'restart'},{l:'Show all vehicles',q:'show all'}]);
+      else { addMsg("I've updated the filters. To get personalised CO₂ estimates, let me ask you a few quick questions first.",'bot'); }
+      setChips([{l:'Start the interview',q:'restart'},{l:'Show all vehicles',q:'show all'}]);
       sending=false; return;
     }
 
-    showTyping();
-    let reply=LLM_ENABLED?await chatLLM(txt):null;
-    hideTyping();
-    if(reply) addMsg(reply,'bot');
-    else addMsg("I'd love to help you find the right vehicle. The best way is through my short interview — it takes about a minute and gives you <strong>personalised</strong> real-world CO₂ estimates, not just EPA lab numbers. Ready to try?",'bot');
-    chips([{l:'🌱 Start the interview',q:'restart'},{l:'Show EVs',q:'show EV'},{l:'How this works',q:'methodology'}]);
+    // Fallback response
+    if(LLM_ENABLED) { showTyping(); chatLLM(txt).then(function(reply){ hideTyping(); if(reply) addMsg(reply,'bot'); else showDefaultResponse(); }); }
+    else showDefaultResponse();
   } finally { sending=false; }
 }
 
+function showDefaultResponse() {
+  addMsg("I'd love to help you find the right vehicle. The best way is through my short interview \u2014 it takes about a minute and gives you <strong>personalised</strong> real-world CO\u2082 estimates, not just EPA lab numbers. Ready to try?",'bot');
+  setChips([{l:'Start the interview',q:'restart'},{l:'Show EVs',q:'show EV'},{l:'How this works',q:'methodology'}]);
+}
+
 function extractKeywords(txt) {
-  let s=S(txt), kw={fuels:[],bodyType:'',seats:null};
-  if(/electric|ev|bev/.test(s)&&!/phev|plug.in|hybrid/.test(s)) kw.fuels=['Electricity'];
-  else if(/phev|plug.in|hybrid/.test(s)) kw.fuels=['Electricity','Gasoline'];
+  var s=S(txt), kw={fuels:[],bodyType:'',seats:null};
+  if(/electric|ev|bev/.test(s)&&!/phev|plug[ -]?in|hybrid/.test(s)) kw.fuels=['Electricity'];
+  else if(/phev|plug[ -]?in|hybrid/.test(s)) kw.fuels=['Electricity','Gasoline'];
   else if(/gas|petrol|ice|diesel/.test(s)) kw.fuels=['Gasoline','Diesel'];
   if(/suv/.test(s)) kw.bodyType='SUV';
   else if(/pickup|truck/.test(s)) kw.bodyType='Pickup';
   else if(/van|minivan/.test(s)) kw.bodyType='Van';
   else if(/wagon/.test(s)) kw.bodyType='Wagon';
-  else if(/car|sedan/.test(s)) kw.bodyType='Car';
-  let sm=s.match(/(\d+)\s*seat/); if(sm) kw.seats=parseInt(sm[1]);
+  else if(/car|sedan/.test(s)&&!/suv/.test(s)) kw.bodyType='Car';
+  var sm=s.match(/(\d+)\s*seat/); if(sm) kw.seats=parseInt(sm[1]);
   return kw;
 }
 
 function showComparison() {
-  if(!userProfile) return;
-  let ev=allCars.filter(c=>c['Fuel Type']==='Electricity').slice(0,1);
-  let phev=allCars.filter(c=>c['Fuel Type']==='Gasoline'&&c['Electric Range (km)']>1).slice(0,1);
-  let ice=allCars.filter(c=>c['Fuel Type']==='Gasoline'&&(c['Electric Range (km)']||0)<=1).slice(0,1);
-  let all=[...ev,...phev,...ice];
-  all.forEach(c=>{ let e=computeEmissions(c,userProfile); c._yearlyKg=e.yearlyKg; c._epaYearly=e.epaYearlyKg; });
-  let msg='<strong>EV vs PHEV vs ICE comparison</strong> (with your profile):<br><br>';
-  all.forEach(c=>{
-    let ft=c['Fuel Type']==='Electricity'?'EV':c['Electric Range (km)']>1?'PHEV':'ICE';
-    msg+=`<strong>${ft}:</strong> ${c.Make} ${c.Model} — real-world: ~${c._yearlyKg.toFixed(0)} kg/yr, EPA lab: ~${c._epaYearly.toFixed(0)} kg/yr<br>`;
+  if(!userProfile||!allCars.length) return;
+  var ev=null,phev=null,ice=null;
+  for(var i=0;i<allCars.length;i++) {
+    var c=allCars[i];
+    if(!ev&&c['Fuel Type']==='Electricity') ev=c;
+    if(!phev&&c['Fuel Type']==='Gasoline'&&c['Electric Range (km)']>1) phev=c;
+    if(!ice&&c['Fuel Type']==='Gasoline'&&(c['Electric Range (km)']||0)<=1) ice=c;
+    if(ev&&phev&&ice) break;
+  }
+  var all=[];
+  if(ev) all.push(ev); if(phev) all.push(phev); if(ice) all.push(ice);
+  if(!all.length) { addMsg("I need vehicle data loaded first. Please wait a moment.",'bot'); return; }
+  all.forEach(function(c){ var e=computeEmissions(c,userProfile); c._yearlyKg=e.yearlyKg; c._epaYearly=e.epaYearlyKg; });
+  var msg='<strong>EV vs PHEV vs ICE comparison</strong> (with your profile):<br><br>';
+  all.forEach(function(c){
+    var ft=c['Fuel Type']==='Electricity'?'EV':c['Electric Range (km)']>1?'PHEV':'ICE';
+    msg+='<strong>'+ft+':</strong> '+c.Make+' '+c.Model+' \u2014 real-world: ~'+c._yearlyKg.toFixed(0)+' kg/yr, EPA lab: ~'+c._epaYearly.toFixed(0)+' kg/yr<br>';
   });
-  msg+='<br><em>Your real-world CO₂ depends heavily on your charging behaviour and electricity source. EPA lab values do not reflect these factors.</em>';
+  msg+='<br><em>Your real-world CO\u2082 depends heavily on your charging behaviour and electricity source. EPA lab values do not reflect these factors.</em>';
   addMsg(msg,'bot');
 }
 
 // =========================================================================
-// 11. DATA LOADING
+// LLM (optional)
 // =========================================================================
-function fetchCars(retries=2) {
-  let ov=$('#load-overlay'); ov.classList.remove('hidden');
-  fetch(DATA_URL).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-  .then(data=>{
-    allCars=data.map(c=>({...c,
-      Make:S(c.Make).replace(/\b\w/g,l=>l.toUpperCase()),
-      Seats:c.Seats||5,
-      'Electric Range (km)':c['Electric Range (km)']||0,
-      'Battery Capacity (kWh)':c['Battery Capacity (kWh)']||0,
-      'Combined MPG':c['Combined MPG']||0,
-      'CO2 Emissions (g/km)':c['CO2 Emissions (g/km)']||0,
-    }));
-    ov.classList.add('hidden');
-    $('#results-count').textContent=allCars.length.toLocaleString()+' vehicles loaded';
-  })
-  .catch(e=>{ console.error(e); if(retries>0) setTimeout(()=>fetchCars(retries-1),2000); else { ov.classList.add('hidden'); addSys('Could not load vehicle data.'); } });
+function chatLLM(msg) {
+  conv.push({role:'user',content:msg});
+  if(conv.length>20) conv=conv.slice(-20);
+  var body=JSON.stringify({model:LLM_MODEL,messages:[
+    {role:'system',content:'You are GreenCarBot, an environmental vehicle advisor. You explain real-world CO2 emissions, EPA lab vs reality gaps, and why PHEVs often underperform when not charged. Keep responses to 2-4 sentences. Be humble: acknowledge limitations. Never give financial or purchasing advice. No em dashes. No markdown.'},
+  ].concat(conv),temperature:0.7,max_tokens:300});
+  var url=PROXY?PROXY+'/api/llm':LLM_URL;
+  var headers={'Content-Type':'application/json'};
+  if(!PROXY&&LLM_KEY) headers['Authorization']='Bearer '+LLM_KEY;
+  return fetch(url,{method:'POST',headers:headers,body:body})
+    .then(function(r){ if(!r.ok) throw new Error('LLM fail'); return r.json(); })
+    .then(function(j){
+      var reply=j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content;
+      if(reply) { conv.push({role:'assistant',content:reply}); if(conv.length>20) conv=conv.slice(-20); }
+      return reply;
+    })
+    .catch(function(){ return null; });
 }
 
 // =========================================================================
-// 12. INIT (Cormac)
+// DATA LOADING
 // =========================================================================
-document.addEventListener('DOMContentLoaded',()=>{
-  $('#send-btn').addEventListener('click',send);
-  $('#inp').addEventListener('keydown',e=>{ if(e.key==='Enter') send(); });
-  $('#i-skip').addEventListener('click',()=>{
-    interviewActive=false; $('#interview-banner').style.display='none'; $('#progress-fill').style.width='0%';
-    chips([]); userProfile=null; filters={fuels:['Electricity','Gasoline','Diesel'],bodyType:'',sort:'personal'};
-    syncFilterChips(); renderResults([]);
-    addMsg("No problem! You can browse freely or describe what you're looking for. When ready, say <strong>'restart'</strong> to try the interview.",'bot');
-    chips([{l:'Show EVs',q:'show EV'},{l:'Start interview',q:'restart'},{l:'How this works',q:'methodology'}]);
+function fetchCars() {
+  return fetch(DATA_URL)
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(function(data){
+      allCars=data.map(function(c){
+        return {
+          Make: S(c.Make).replace(/\b\w/g,function(l){ return l.toUpperCase(); }),
+          Model: c.Model,
+          'Vehicle Class': c['Vehicle Class'],
+          'Body Type': c['Body Type'],
+          Seats: c.Seats||5,
+          'Fuel Type': c['Fuel Type'],
+          'Battery Capacity (kWh)': c['Battery Capacity (kWh)']||0,
+          'Electric Range (km)': c['Electric Range (km)']||0,
+          'City MPG': c['City MPG']||0,
+          'Highway MPG': c['Highway MPG']||0,
+          'Combined MPG': c['Combined MPG']||0,
+          'CO2 Emissions (g/km)': c['CO2 Emissions (g/km)']||0,
+          'Drive Type': c['Drive Type']||'',
+          Footprint: c['Footprint']||''
+        };
+      });
+      el('load-overlay').classList.add('hidden');
+      el('results-count').textContent=allCars.length.toLocaleString()+' vehicles loaded';
+      el('chat-status').textContent='Ready';
+      appReady=true;
+    })
+    .catch(function(e){
+      console.error('Load error:',e);
+      el('load-overlay').classList.add('hidden');
+      el('chat-status').textContent='Data error';
+      addSys('\u26A0\uFE0F Could not load vehicle data. Please check your connection and refresh.');
+    });
+}
+
+// =========================================================================
+// MODALS
+// =========================================================================
+function showModal(id) { el(id).classList.add('show'); }
+function hideModal(id) { el(id).classList.remove('show'); }
+
+// =========================================================================
+// INIT
+// =========================================================================
+document.addEventListener('DOMContentLoaded',function(){
+  // Button handlers
+  el('send-btn').addEventListener('click',send);
+  el('inp').addEventListener('keydown',function(e){ if(e.key==='Enter') send(); });
+
+  // Skip interview
+  el('i-skip').addEventListener('click',function(){
+    interviewActive=false; el('interview-banner').style.display='none';
+    el('progress-fill').style.width='0%';
+    setChips(null); userProfile=null;
+    filters={fuels:['Electricity','Gasoline','Diesel'],bodyType:'',sort:'personal'};
+    syncFilterChips();
+    el('car-grid').innerHTML=''; el('empty-state').style.display='flex';
+    el('summary-bar').style.display='none';
+    addMsg("No problem! You can browse freely or describe what you're looking for. Say <strong>'restart'</strong> anytime to try the interview.",'bot');
+    setChips([{l:'Show EVs',q:'show EV'},{l:'Start interview',q:'restart'},{l:'How this works',q:'methodology'}]);
   });
 
-  fetchCars();
-  setTimeout(()=>{
-    addMsg("Hello! I'm <strong>GreenCarBot</strong> — I estimate <em>your</em> real-world vehicle CO₂ emissions, not just EPA lab numbers. 🌿",'bot');
-    setTimeout(()=>{
-      addMsg("The EPA tests vehicles in a laboratory. <strong>Your</strong> emissions depend on how you drive, how often you charge, and where your electricity comes from. I'll ask six quick questions to build <em>your</em> personalised picture.",'bot');
-      setTimeout(()=>startInterview(),600);
-    },500);
-  },400);
+  // Sort
+  el('sort-select').addEventListener('change',onSortChange);
+
+  // Filter chips
+  qsa('#filter-bar .f-chip[data-dim="fuel"]').forEach(function(c){
+    c.addEventListener('click',function(){ onFuelChip(c); });
+  });
+  qsa('#filter-bar .f-chip[data-dim="body"]').forEach(function(c){
+    c.addEventListener('click',function(){ onBodyChip(c); });
+  });
+
+  // Modal
+  el('about-link').addEventListener('click',function(){ showModal('modal-about'); });
+  el('close-about').addEventListener('click',function(){ hideModal('modal-about'); });
+  el('modal-about').addEventListener('click',function(e){ if(e.target===this) hideModal('modal-about'); });
+
+  // Load data then greet
+  fetchCars().then(function(){
+    setTimeout(function(){
+      addMsg("Hello! I'm <strong>GreenCarBot</strong>. I estimate <em>your</em> real-world vehicle CO\u2082 emissions, not just EPA lab numbers. \uD83C\uDF3F",'bot');
+      setTimeout(function(){
+        addMsg("The EPA tests vehicles in a lab. <strong>Your</strong> emissions depend on how you drive, how often you charge, and where your electricity comes from. Let me ask you six quick questions to build <em>your</em> personalised picture.",'bot');
+        setTimeout(function(){ startInterview(); },600);
+      },500);
+    },300);
+  });
 });
 </script>
 </body>
