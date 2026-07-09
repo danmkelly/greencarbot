@@ -759,7 +759,7 @@ function updateSummary(top) {
     '<div class="row"><span class="lbl">Based on</span><span class="val">'+p.annualKm+' km/yr, '+p.tripLengthLabel+' trips, '+p.chargeFreq+' charging, '+p.gridIntensity+' gCO\u2082/kWh</span></div>';
 }
 
-function buildExplain(car) {
+function buildExplain(car) { return explainText(car); }
 
 // =========================================================================
 // REFLECTION & ADVICE
@@ -909,6 +909,8 @@ function handleUserSummaryEdit(qIdx, val) {
   buildAnswerTile();
   runRecommendation();
 }
+
+function explainText(car) {
   var p = userProfile;
   var lines = [];
   lines.push('<strong>Why this vehicle?</strong> ');
