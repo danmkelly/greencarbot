@@ -1,0 +1,82 @@
+Project: Build a browser‑based chatbot + web experience called GreenCarBot, using the EPA dataset (epa_vehicle_catalogue.csv) as the sole data source. The experience must run client‑side (HTML/JS/CSS) and be deployable on GitHub Pages.
+
+Agents:
+- Cormac – orchestrate, break down tasks, enforce quality gates
+- Fionn – EPA taxonomy, CO₂ logic, scoring model
+- Siobhan – UI/UX, layout, cards, colour system
+- Dara – conversation engine, structured flow, scoring implementation
+- Niamh – deployment constraints, CORS, file loading
+- Keelin – QA, clarity, explainability, bias transparency
+
+1. Core Objective
+Create a guided, structured chatbot that helps a user understand:
+- Their real‑world personalised CO₂ emissions for BEV, PHEV, ICE
+- The gap between EPA laboratory values and real‑world outcomes
+- Why certain vehicles are recommended
+- Where uncertainty or behavioural bias exists
+- How their behaviour (charging, trip length, electricity mix) changes the result
+
+The experience must be transparent, explainable, humble, honest about limitations, and focused on BEV vs PHEV vs ICE real‑world differences. This is a proof‑of‑concept.
+
+2. Data Source
+Use the processed CSV: epa_vehicle_catalogue.csv
+Columns include:
+Make, Model, Vehicle Class, Body Type, Seats, Fuel Type, Battery Capacity (kWh), Electric Range (km), City/Highway/Combined MPG, CO₂ Emissions (g/km), Drive Type, Footprint.
+
+3. Structured Interview Flow (Dara + Siobhan)
+Build a six‑question structured interview:
+1. Annual mileage
+2. Typical trip length
+3. Charging frequency (daily / weekly / rarely / never)
+4. Electricity carbon intensity (gCO₂/kWh)
+5. Ownership period (years)
+6. Vehicle preferences (seats, body type, segment, fuel type openness)
+
+Each question must be conversational, show progress, allow correction, explain why the question matters, and avoid jargon.
+
+4. Behaviour‑Aware Emissions Model (Fionn + Dara)
+Implement:
+Electric‑mode share (PHEV + BEV) based on charging frequency + trip length.
+Electric‑mode CO₂ = electricity_intensity × kWh_per_km
+Petrol‑mode CO₂: convert MPG → L/100km → gCO₂/km using EPA factors.
+Combined real‑world emissions = (e_share × e_co2) + (p_share × p_co2)
+Lifecycle amortisation = battery_embedded_co2 / ownership_years
+Final personalised annual CO₂ = (real_world_adjusted × annual_km) + embedded_per_year
+
+5. Merging User Inputs with EPA Data (Cormac + Dara)
+Steps:
+1. Filter EPA dataset by user preferences.
+2. For each remaining vehicle:
+   - compute personalised CO₂
+   - compute EPA baseline CO₂
+   - compute EPA fantasy vs real‑world gap
+3. Rank vehicles by personalised CO₂.
+4. Select top 3–5 vehicles.
+
+6. Explainability & Transparency (Keelin + Siobhan)
+Every recommendation must include:
+- Why this vehicle was suggested
+- EPA vs real‑world comparison (two bars)
+- Uncertainty notes
+- Bias flags (charging behaviour, electricity mix, lifecycle impact)
+- Plain‑language explanation
+
+7. UI/UX Requirements (Siobhan)
+Two‑panel layout:
+Left: chatbot conversation, progress indicator, user answers summary
+Right: vehicle cards, CO₂ comparison bars, explainability notes, EPA vs real‑world gap visual, lifecycle breakdown
+
+Theme: green, charcoal, white. Mobile responsive. Accessible fonts.
+
+8. Pages Required
+A. Main Chatbot Page: interview + recommendations + visuals.
+B. “How This Works” Page:
+   - EPA dataset source
+   - How data was filtered
+   - How behaviour model works
+   - Known weaknesses
+   - Future improvements
+   - Transparency statement
+   - Bias considerations
+   - Why EPA differs from real‑world outcomes
+   - Why PHEVs often underperform in practice

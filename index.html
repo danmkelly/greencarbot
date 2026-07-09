@@ -801,77 +801,14 @@ function buildReflection(top, allCandidates) {
 }
 
 // =========================================================================
-// ANSWER TILE
+// ANSWER TILE (chat side) + USER SUMMARY BAR (results side)
 // =========================================================================
-function buildAnswerTile() {
-
-// =========================================================================
-// USER SUMMARY BAR (above filter bar on results side)
-// =========================================================================
-function buildUserSummary() {
-  var bar = el('user-summary');
-  if (!userProfile) { bar.style.display = 'none'; return; }
-  bar.style.display = 'flex';
-  bar.innerHTML = '<span class="us-label">Your profile:</span>';
-
-  var p = userProfile;
-  var items = [
-    {lbl:'km/yr', val: p.annualKm ? p.annualKm.toLocaleString() : '?', opts:[5000,15000,25000,35000], prop:'annualKm', qIdx:0},
-    {lbl:'trips', val: p.tripLengthLabel||'?', opts:['short','medium','long'], labels:{short:'<30 km',medium:'30-80 km',long:'>80 km'}, prop:'tripLengthLabel', qIdx:1},
-    {lbl:'charge', val: p.chargeFreq||'?', opts:['daily','weekly','rarely','never'], prop:'chargeFreq', qIdx:2},
-    {lbl:'grid', val: p.gridIntensity ? p.gridIntensity+' g' : '?', opts:[50,300,400,700], labels:{50:'50 green',300:'300 avg',400:'400 unsure',700:'700 coal'}, prop:'gridIntensity', qIdx:3},
-    {lbl:'keep', val: p.ownershipYears ? p.ownershipYears+' yr' : '?', opts:[3,5,8,10], prop:'ownershipYears', qIdx:4},
-  ];
-
-  items.forEach(function(item){
-    var chip = document.createElement('span');
-    chip.className = 'us-chip';
-    chip.title = 'Click to change';
-    chip.innerHTML = '<span class="us-lbl">'+item.lbl+':</span><span class="us-val">'+item.val+'</span>';
-    chip.onclick = function(){
-      // Show all options for this item
-      var chips = item.opts.map(function(opt){
-        var label = (item.labels && item.labels[opt]) || opt;
-        return {l:label, q:'set:'+item.qIdx+':'+opt};
-      });
-      setChips(chips);
-      addMsg('Change <strong>'+item.lbl+'</strong> to what?', 'bot');
-      // Temporarily set interview step so the answer gets processed
-      interviewAnswers._userSummaryEdit = true;
-      interviewStep = item.qIdx;
-      interviewActive = true;
-    };
-    bar.appendChild(chip);
-  });
-}
-
-function handleUserSummaryEdit(qIdx, val) {
-  interviewActive = false;
-  setChips(null);
-
-  var tripKmMap = {short:20, medium:55, long:120};
-  var q = INTERVIEW[qIdx];
-  var parsed;
-
-  if (q.id === 'annualKm') { parsed = parseInt(val); userProfile.annualKm = parsed; }
-  else if (q.id === 'tripLength') { parsed = val; userProfile.tripLengthLabel = parsed; userProfile.tripLengthKm = tripKmMap[parsed]||55; }
-  else if (q.id === 'chargeFreq') { parsed = val; userProfile.chargeFreq = parsed; }
-  else if (q.id === 'gridIntensity') { parsed = parseInt(val); userProfile.gridIntensity = parsed; }
-  else if (q.id === 'ownershipYears') { parsed = parseInt(val); userProfile.ownershipYears = parsed; }
-
-  addSys('Updated '+q.id.replace(/([A-Z])/g,' $1').toLowerCase()+' to '+val);
-  buildUserSummary();
-  buildAnswerTile();
-  runRecommendation();
-}
-
 function buildAnswerTile() {
   var tile = el('answers-tile');
   if (!userProfile) { tile.style.display = 'none'; return; }
   tile.style.display = 'block';
 
-  var p = userProfile, a = interviewAnswers;
-  var seatLabel = (p.minSeats || minSeats) + '+ seats';
+  var p = userProfile;
   var items = [
     {lbl:'Annual km', val: p.annualKm ? p.annualKm+' km' : null, idx:0},
     {lbl:'Trip length', val: p.tripLengthLabel, idx:1},
@@ -910,6 +847,56 @@ function buildAnswerTile() {
     }
     tile.appendChild(row);
   });
+}
+
+function buildUserSummary() {
+  var bar = el('user-summary');
+  if (!userProfile) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML = '<span class="us-label">Your profile:</span>';
+
+  var p = userProfile;
+  var items = [
+    {lbl:'km/yr', val: p.annualKm ? p.annualKm.toLocaleString() : '?', opts:[5000,15000,25000,35000], prop:'annualKm', qIdx:0},
+    {lbl:'trips', val: p.tripLengthLabel||'?', opts:['short','medium','long'], labels:{short:'<30 km',medium:'30-80 km',long:'>80 km'}, prop:'tripLengthLabel', qIdx:1},
+    {lbl:'charge', val: p.chargeFreq||'?', opts:['daily','weekly','rarely','never'], prop:'chargeFreq', qIdx:2},
+    {lbl:'grid', val: p.gridIntensity ? p.gridIntensity+' g' : '?', opts:[50,300,400,700], labels:{50:'50 green',300:'300 avg',400:'400 unsure',700:'700 coal'}, prop:'gridIntensity', qIdx:3},
+    {lbl:'keep', val: p.ownershipYears ? p.ownershipYears+' yr' : '?', opts:[3,5,8,10], prop:'ownershipYears', qIdx:4},
+  ];
+
+  items.forEach(function(item){
+    var chip = document.createElement('span');
+    chip.className = 'us-chip';
+    chip.title = 'Click to change';
+    chip.innerHTML = '<span class="us-lbl">'+item.lbl+':</span><span class="us-val">'+item.val+'</span>';
+    chip.onclick = function(){
+      var chips = item.opts.map(function(opt){
+        var label = (item.labels && item.labels[opt]) || opt;
+        return {l:label, q:'set:'+item.qIdx+':'+opt};
+      });
+      setChips(chips);
+      addMsg('Change <strong>'+item.lbl+'</strong> to what?', 'bot');
+      interviewStep = item.qIdx;
+      interviewActive = true;
+    };
+    bar.appendChild(chip);
+  });
+}
+
+function handleUserSummaryEdit(qIdx, val) {
+  interviewActive = false;
+  setChips(null);
+  var tripKmMap = {short:20, medium:55, long:120};
+  var q = INTERVIEW[qIdx];
+  if (q.id === 'annualKm') userProfile.annualKm = parseInt(val);
+  else if (q.id === 'tripLength') { userProfile.tripLengthLabel = val; userProfile.tripLengthKm = tripKmMap[val]||55; }
+  else if (q.id === 'chargeFreq') userProfile.chargeFreq = val;
+  else if (q.id === 'gridIntensity') userProfile.gridIntensity = parseInt(val);
+  else if (q.id === 'ownershipYears') userProfile.ownershipYears = parseInt(val);
+  addSys('Updated '+q.id.replace(/([A-Z])/g,' $1').toLowerCase()+' to '+val);
+  buildUserSummary();
+  buildAnswerTile();
+  runRecommendation();
 }
   var p = userProfile;
   var lines = [];
@@ -1202,7 +1189,7 @@ document.addEventListener('DOMContentLoaded', function(){
     setTimeout(function(){
       addMsg("Hello! I'm <strong>GreenCarBot</strong>. I estimate <em>your</em> real-world vehicle CO\u2082 emissions, not just EPA lab numbers. \uD83C\uDF3F", 'bot');
       setTimeout(function(){
-        addMsg("The EPA tests vehicles in a lab. <strong>Your</strong> emissions depend on how you drive, how often you charge, and where your electricity comes from. Let me ask you six quick questions to build <em>your</em> personalised picture.", 'bot');
+        addMsg("The EPA tests vehicles in a lab. <strong>Your</strong> emissions depend on how you drive, how often you charge, and where your electricity comes from. Let me ask you five quick questions to build <em>your</em> personalised picture.", 'bot');
         setTimeout(function(){ startInterview(); }, 600);
       }, 500);
     }, 300);
