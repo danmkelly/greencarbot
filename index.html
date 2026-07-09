@@ -613,7 +613,10 @@ function onSortChange() {
 // RECOMMENDATION ENGINE
 // =========================================================================
 function runRecommendation() {
-  if (!userProfile || !allCars.length) { console.log('runRecommendation: no profile or no cars'); return; }
+  if (!userProfile || !allCars.length) { 
+    if (!allCars.length) addMsg("I'm still loading the vehicle data. Please wait a moment, then try again.", 'bot');
+    return; 
+  }
   try {
   // Build candidate list applying seat + body filters
   var candidates = [];
@@ -673,7 +676,7 @@ function runRecommendation() {
   renderResults(unique);
   updateSummary(unique);
   updateDeadChips();
-  } catch(e) { console.error('runRecommendation error:', e); }
+  } catch(e) { console.error('runRecommendation error:', e); addMsg('Something went wrong building your recommendations. Please try refreshing.', 'bot'); }
 }
 
 function renderResults(cars) {
@@ -1129,6 +1132,7 @@ function fetchCars() {
       el('results-count').textContent = allCars.length.toLocaleString() + ' vehicles loaded';
       el('chat-status').textContent = 'Ready';
       appReady = true;
+      return true; // signal success
     })
     .catch(function(e){
       console.error('Load error:', e);
@@ -1189,8 +1193,9 @@ document.addEventListener('DOMContentLoaded', function(){
   qs('#modal-about .close').addEventListener('click', function(){ hideModal('modal-about'); });
   el('modal-about').addEventListener('click', function(e){ if (e.target === this) hideModal('modal-about'); });
 
-  // Load data then greet
-  fetchCars().then(function(){
+  // Load data then greet (only if data loaded successfully)
+  fetchCars().then(function(ok){
+    if (!ok || !allCars.length) { addSys('Data load failed. Please refresh.'); return; }
     setTimeout(function(){
       addMsg("Hello! I'm <strong>GreenCarBot</strong>. I estimate <em>your</em> real-world vehicle CO\u2082 emissions, not just EPA lab numbers. \uD83C\uDF3F", 'bot');
       setTimeout(function(){
