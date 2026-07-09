@@ -477,7 +477,7 @@ function showBanner(idx) {
 }
 
 function askQ(idx) {
-  if(idx>=INTERVIEW.length) { finishInterview(); return; }
+  if(idx>=INTERVIEW.length) { addSys('[askQ -> finishInterview]'); finishInterview(); return; }
   interviewStep=idx;
   showBanner(idx);
   el('progress-fill').style.width=(idx/INTERVIEW.length*100)+'%';
@@ -499,6 +499,8 @@ function processAnswer(txt) {
 }
 
 function finishInterview() {
+  addSys('[finishInterview called]');
+  try {
   interviewActive=false;
   el('interview-banner').style.display='none';
   el('progress-fill').style.width='100%';
@@ -531,6 +533,7 @@ function finishInterview() {
   addMsg("Got it! Your personalised results are in the panel on the right. <strong>Use the filter chips above the cards</strong> to narrow by body type, seats, or powertrain \u2014 I'll re-rank instantly. You can also ask me about electricity mixes, charging routines, or how different driving patterns affect your numbers.", 'bot');
 
   runRecommendation();
+  } catch(e) { addSys('ERROR: '+e.message); console.error(e); }
 }
 
 // =========================================================================
