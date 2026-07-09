@@ -541,7 +541,7 @@ function finishInterview() {
   buildAnswerTile();
 
   // Point to filter bar for refining
-  addMsg("Got it! Your personalised results are in the panel on the right. <strong>Use the filter chips above the cards</strong> to narrow by body type, seats, or powertrain \u2014 I'll re-rank instantly. You can also ask me about electricity mixes, charging routines, or how different driving patterns affect your numbers.", 'bot');
+  addMsg("Thanks! Your results are in the panel on the right. \uD83D\uDC49 <strong>Click any profile chip above the cards</strong> to adjust your answers and see the impact instantly. Ask me about electricity mixes, charging routines, or PHEV vs EV trade-offs \u2014 I'm here for the deeper conversation.", 'bot');
 
   runRecommendation();
   } catch(e) { addSys('ERROR: '+e.message); console.error(e); }
@@ -664,25 +664,13 @@ function runRecommendation() {
   var unique = deduplicateTop(candidates, 10);
   for (var k = 0; k < unique.length; k++) unique[k]._rank = k + 1;
 
-  // Build result message
-  var msg = 'Here are your <strong>top ' + unique.length + ' vehicles</strong> ranked by <em>your</em> personalised real-world CO\u2082 emissions:<br><br>';
-  unique.forEach(function(c,i){
-    var medal = i===0?'\u{1F947}':i===1?'\u{1F948}':i===2?'\u{1F949}':'';
-    var pt = carPowertrain(c);
-    var ftIcon = pt==='ev'?'\u26A1':pt==='phev'?'\uD83D\uDD0C':pt==='diesel'?'\uD83D\uDEE2':'\u26FD';
-    var ptLabel = pt==='ev'?'EV':pt==='phev'?'PHEV':pt==='diesel'?'Diesel':'ICE';
-    msg += medal + ' <strong>#' + (i+1) + ':</strong> ' + c.Make + ' ' + c.Model + ' \u2014 ' + ftIcon + ' ' + ptLabel + ' ~' + c._yearlyKg.toFixed(0) + ' kg CO\u2082/year<br>';
-  });
-  msg += '<br><em>Based on: ' + userProfile.annualKm + ' km/year, ' + userProfile.tripLengthLabel + ' trips, ' + userProfile.chargeFreq + ' charging, ' + userProfile.gridIntensity + ' gCO\u2082/kWh grid, ' + userProfile.ownershipYears + '-year ownership.</em>';
-  if (candidates.length > unique.length) {
-    msg += '<br><br><em>(' + unique.length + ' unique models shown from ' + candidates.length + ' matching variants.)</em>';
-  }
-  addMsg(msg, 'bot');
+  // Brief confirmation (not the full list — right panel handles that)
+  addSys('\u2705 ' + unique.length + ' unique models ranked in the results panel (' + candidates.length + ' matching variants).');
   setChips([
     {l:'Explain the top pick',q:'explain #1'},
     {l:'EV vs PHEV vs ICE comparison',q:'compare ev vs phev vs ice'},
     {l:'How does my grid affect this?',q:'how does electricity source affect EV emissions'},
-    {l:'What if I charged more?',q:'what if I charged daily instead'},
+    {l:'Restart',q:'restart'},
   ]);
 
   buildReflection(unique, candidates);
@@ -1043,25 +1031,26 @@ function send() {
       sending = false; return;
     }
 
-    // Free chat keyword extraction
-    var kw = extractKeywords(txt);
-    if (kw.pt || kw.bodyType || kw.seats) {
-      if (kw.pt) powertrains = kw.pt;
-      if (kw.bodyType) filters.bodyType = kw.bodyType;
-      if (kw.seats) {
-        if (!userProfile) userProfile = { annualKm:15000, tripLengthKm:55, tripLengthLabel:'medium', chargeFreq:'weekly', gridIntensity:300, ownershipYears:5, prefsRaw:'', minSeats:kw.seats };
-        else userProfile.minSeats = kw.seats;
+    // Free chat keyword extraction — only when no profile yet
+    if (!userProfile) {
+      var kw = extractKeywords(txt);
+      if (kw.pt || kw.bodyType || kw.seats) {
+        if (kw.pt) powertrains = kw.pt;
+        if (kw.bodyType) filters.bodyType = kw.bodyType;
+        if (kw.seats) {
+          if (!userProfile) userProfile = { annualKm:15000, tripLengthKm:55, tripLengthLabel:'medium', chargeFreq:'weekly', gridIntensity:300, ownershipYears:5, newUsed:'both', minSeats:kw.seats };
+        }
+        syncFilterChips();
+        if (userProfile) { runRecommendation(); setChips([{l:'Explain the top pick',q:'explain #1'},{l:'How does my grid affect EVs?',q:'how does electricity source affect EV emissions'}]); }
+        else { addMsg("I've updated the filters. To get personalised CO\u2082 estimates, let me ask you a few quick questions first.", 'bot'); }
+        setChips([{l:'Start the interview',q:'restart'},{l:'Show all vehicles',q:'show all'}]);
+        sending = false; return;
       }
-      syncFilterChips();
-      if (userProfile) { runRecommendation(); setChips([{l:'Explain the top pick',q:'explain #1'},{l:'How does my grid affect EVs?',q:'how does electricity source affect EV emissions'}]); }
-      else { addMsg("I've updated the filters. To get personalised CO\u2082 estimates, let me ask you a few quick questions first.", 'bot'); }
-      setChips([{l:'Start the interview',q:'restart'},{l:'Show all vehicles',q:'show all'}]);
-      sending = false; return;
     }
 
     // Post-interview free discussion or pre-interview chat
     if (userProfile) {
-      // Interview done — engage conversationally on green car topics
+      // Interview done — engage conversationally, never re-rank from chat
       showTyping();
       chatLLM(txt).then(function(reply){
         hideTyping();
@@ -1071,7 +1060,7 @@ function send() {
           {l:'How does my grid affect EVs?',q:'how does electricity source affect EV emissions'},
           {l:'What if I charged more often?',q:'what if I charged daily instead'},
           {l:'PHEV vs EV trade-offs',q:'compare PHEV versus EV for my profile'},
-          {l:'Adjust my answers',q:'restart'},
+          {l:'Restart',q:'restart'},
         ]);
       });
     } else {
