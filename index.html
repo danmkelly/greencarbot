@@ -379,21 +379,24 @@ function deduplicateTop(candidates, count) {
 // INTERVIEW QUESTIONS
 // =========================================================================
 var INTERVIEW = [
-  { id:'annualKm', step:'1/5', q:'How many kilometres do you drive per year? (This is the biggest factor in your total emissions.)',
+  { id:'annualKm', step:'1/6', q:'How many kilometres do you drive per year? (This is the biggest factor in your total emissions.)',
     parse:function(t){ var n=parseInt(t.replace(/,/g,'')); if(n>=1000&&n<=100000) return n; var m=t.match(/(\d[\d,]*)/); return m?parseInt(m[1].replace(/,/g,'')):null; },
     chips:[{l:'5,000 km (low)',q:'5000'},{l:'15,000 km (average)',q:'15000'},{l:'25,000 km (high)',q:'25000'},{l:'35,000+ km',q:'35000'}] },
-  { id:'tripLength', step:'2/5', q:"What's your typical trip length? (This affects how much a PHEV can drive on electricity alone.)",
+  { id:'tripLength', step:'2/6', q:"What's your typical trip length? (This affects how much a PHEV can drive on electricity alone.)",
     parse:function(t){ var s=t.toLowerCase(); if(/short|<.?30|local|around town|city|urban/.test(s)) return 'short'; if(/medium|30.?80|commute|moderate/.test(s)) return 'medium'; if(/long|>.*80|highway|motorway/.test(s)) return 'long'; return null; },
     chips:[{l:'Short (<30 km)',q:'short'},{l:'Medium (30-80 km)',q:'medium'},{l:'Long (>80 km)',q:'long'}] },
-  { id:'chargeFreq', step:'3/5', q:'How often could you charge an electric or plug-in hybrid vehicle? (Daily charging dramatically reduces PHEV emissions.)',
+  { id:'chargeFreq', step:'3/6', q:'How often could you charge an electric or plug-in hybrid vehicle? (Daily charging dramatically reduces PHEV emissions.)',
     parse:function(t){ var s=t.toLowerCase(); if(/daily|every day|every night|always|home/.test(s)) return 'daily'; if(/weekly|once a week|few times|sometimes/.test(s)) return 'weekly'; if(/rarely|seldom|occasional|hardly/.test(s)) return 'rarely'; if(/never|no|cannot|can't|won't/.test(s)) return 'never'; return null; },
     chips:[{l:'Daily',q:'daily'},{l:'Weekly',q:'weekly'},{l:'Rarely',q:'rarely'},{l:'Never',q:'never'}] },
-  { id:'gridIntensity', step:'4/5', q:"What's the carbon intensity of your electricity? (gCO₂/kWh. This determines how clean an EV actually is <em>for you</em>.)",
+  { id:'gridIntensity', step:'4/6', q:"What's the carbon intensity of your electricity? (gCO₂/kWh. This determines how clean an EV actually is <em>for you</em>.)",
     parse:function(t){ var s=t.toLowerCase(); var n=parseInt(t); if(!isNaN(n)&&n>=0&&n<=1000) return n; if(/very.*green|renewable|solar|wind|nuclear|clean|low|hydro/.test(s)) return 50; if(/average|grid|normal|standard|typical|medium|mix/.test(s)) return 300; if(/coal|dirty|high|fossil|heavy/.test(s)) return 700; return null; },
     chips:[{l:'Very green (~50)',q:'50'},{l:'Average grid (~300)',q:'300'},{l:'Coal-heavy (~700)',q:'700'},{l:'Not sure (~400)',q:'400'}] },
-  { id:'ownershipYears', step:'5/5', q:"How many years do you plan to keep the vehicle? (Longer ownership spreads the battery's manufacturing emissions over more years.)",
+  { id:'ownershipYears', step:'5/6', q:"How many years do you plan to keep the vehicle? (Longer ownership spreads the battery's manufacturing emissions over more years.)",
     parse:function(t){ var n=parseInt(t); if(n>=1&&n<=30) return n; var m=t.match(/(\d+)/); return m?parseInt(m[1]):null; },
-    chips:[{l:'3 years',q:'3'},{l:'5 years',q:'5'},{l:'8 years',q:'8'},{l:'10+ years',q:'10'}] }
+    chips:[{l:'3 years',q:'3'},{l:'5 years',q:'5'},{l:'8 years',q:'8'},{l:'10+ years',q:'10'}] },
+  { id:'newUsed', step:'6/6', q:'Are you considering new vehicles, used, or both? (Used vehicles avoid the manufacturing CO₂ burden entirely.)',
+    parse:function(t){ var s=t.toLowerCase(); if(/new/.test(s)&&!/used|both|either/.test(s)) return 'new'; if(/used|second.hand|pre.owned/.test(s)&&!/new|both|either/.test(s)) return 'used'; if(/both|either|any|all|open|don't care|no pref/.test(s)) return 'both'; return null; },
+    chips:[{l:'New only',q:'new'},{l:'Used only',q:'used'},{l:'Both / no preference',q:'both'}] }
 ];
 
 // =========================================================================
@@ -515,6 +518,7 @@ function finishInterview() {
     chargeFreq: a.chargeFreq||'weekly',
     gridIntensity: a.gridIntensity||300,
     ownershipYears: a.ownershipYears||5,
+    newUsed: a.newUsed||'both',
     minSeats: minSeats
   };
 
@@ -714,7 +718,7 @@ function renderResults(cars) {
     var yr = c._yearlyKg||0, ey = c._epaYearly||0;
     var yrPct = Math.min(100, (yr/maxCo2)*100);
     var epPct = ey > 0 ? Math.min(100, (ey/maxCo2)*100) : 0;
-    var gapStr = yr > ey ? '+' + Math.abs(c._gapPct).toFixed(0) + '% above EPA' : (ey > 0 ? 'on par with EPA' : '');
+    var gapStr = yr > ey ? '+' + Math.abs(c._gapPct).toFixed(0) + '% above EPA' : (ey > 0 && Math.abs(c._gapPct) < 0.5 ? 'on par with EPA' : (ey > 0 ? Math.abs(c._gapPct).toFixed(0) + '% below EPA' : ''));
 
     var explain = buildExplain(c);
     var flags = buildFlags(c);
@@ -805,7 +809,11 @@ function buildReflection(top, allCandidates) {
   if (p.annualKm >= 25000 && dominant === 'ice') {
     advice.push('<strong>With your high mileage, an EV or PHEV with home charging would save significant CO\u2082.</strong> The fuel cost savings alone often justify the higher purchase price.');
   }
-  advice.push('<strong>Consider a used vehicle.</strong> Buying a 2\u20133 year old model means the manufacturing emissions have already been \u2018paid for\u2019. A used EV or PHEV can be the lowest-lifetime-CO\u2082 option for many drivers.');
+  if (p.newUsed !== 'used') {
+    advice.push('<strong>Consider a used vehicle.</strong> Buying a 2\u20133 year old model means the manufacturing emissions have already been \u2018paid for\u2019. A used EV or PHEV can be the lowest-lifetime-CO\u2082 option for many drivers.');
+  } else {
+    advice.push('<strong>Good call on used.</strong> Since you are considering used vehicles, the manufacturing CO\u2082 is already accounted for by the first owner. Focus on fuel efficiency and remaining battery life.');
+  }
 
   lines.push('<p class="advice"><strong>How to improve:</strong><br>'+advice.join('<br>')+'</p>');
   box.innerHTML = lines.join('');
@@ -826,6 +834,7 @@ function buildAnswerTile() {
     {lbl:'Charging', val: p.chargeFreq, idx:2},
     {lbl:'Grid gCO\u2082/kWh', val: p.gridIntensity, idx:3},
     {lbl:'Ownership', val: p.ownershipYears+' years', idx:4},
+    {lbl:'New / Used', val: p.newUsed||'both', idx:5},
   ];
 
   tile.innerHTML = '';
@@ -873,25 +882,52 @@ function buildUserSummary() {
     {lbl:'charge', val: p.chargeFreq||'?', opts:['daily','weekly','rarely','never'], prop:'chargeFreq', qIdx:2},
     {lbl:'grid', val: p.gridIntensity ? p.gridIntensity+' g' : '?', opts:[50,300,400,700], labels:{50:'50 green',300:'300 avg',400:'400 unsure',700:'700 coal'}, prop:'gridIntensity', qIdx:3},
     {lbl:'keep', val: p.ownershipYears ? p.ownershipYears+' yr' : '?', opts:[3,5,8,10], prop:'ownershipYears', qIdx:4},
+    {lbl:'new/used', val: (p.newUsed||'both'), opts:['new','used','both'], prop:'newUsed', qIdx:5},
   ];
 
   items.forEach(function(item){
+    var wrap = document.createElement('span');
+    wrap.className = 'us-chip-wrap';
+    wrap.style.position = 'relative';
     var chip = document.createElement('span');
     chip.className = 'us-chip';
     chip.title = 'Click to change';
     chip.innerHTML = '<span class="us-lbl">'+item.lbl+':</span><span class="us-val">'+item.val+'</span>';
-    chip.onclick = function(){
-      var chips = item.opts.map(function(opt){
-        var label = (item.labels && item.labels[opt]) || opt;
-        return {l:label, q:'set:'+item.qIdx+':'+opt};
+    chip.onclick = function(e){
+      e.stopPropagation();
+      // Remove any existing popover
+      var existing = wrap.querySelector('.us-popover');
+      if (existing) { existing.remove(); return; }
+      // Close other popovers
+      qsa('.us-popover').forEach(function(p){ p.remove(); });
+      // Build popover
+      var pop = document.createElement('span');
+      pop.className = 'us-popover';
+      pop.style.cssText = 'position:absolute;top:100%;left:0;z-index:20;background:var(--panel);border:1px solid var(--accent);border-radius:8px;padding:4px 0;min-width:100px;margin-top:3px;';
+      item.opts.forEach(function(opt){
+        var o = document.createElement('div');
+        o.style.cssText = 'padding:4px 12px;font-size:0.65rem;cursor:pointer;white-space:nowrap;color:var(--text);';
+        o.textContent = (item.labels && item.labels[opt]) || opt;
+        if (String(opt) === String(item.val)) o.style.color = 'var(--accent)';
+        o.onclick = function(ev){ ev.stopPropagation(); pop.remove(); qa('set:'+item.qIdx+':'+opt); };
+        pop.appendChild(o);
       });
-      setChips(chips);
-      addMsg('Change <strong>'+item.lbl+'</strong> to what?', 'bot');
-      interviewStep = item.qIdx;
-      interviewActive = true;
+      // Other option
+      var other = document.createElement('div');
+      other.style.cssText = 'padding:4px 12px;font-size:0.65rem;cursor:pointer;white-space:nowrap;color:var(--muted);border-top:1px solid var(--border);margin-top:2px;padding-top:6px;';
+      other.textContent = 'Other...';
+      other.onclick = function(ev){ ev.stopPropagation(); pop.remove(); interviewActive = true; interviewStep = item.qIdx; showBanner(item.qIdx); el('progress-fill').style.width = (item.qIdx/INTERVIEW.length*100)+'%'; addMsg('Let me re-ask: ' + INTERVIEW[item.qIdx].q, 'bot'); setChips(INTERVIEW[item.qIdx].chips); el('inp').focus(); };
+      pop.appendChild(other);
+      wrap.appendChild(pop);
     };
-    bar.appendChild(chip);
+    wrap.appendChild(chip);
+    bar.appendChild(wrap);
   });
+  // Close popovers on outside click
+  if (!bar._popoverBound) {
+    bar._popoverBound = true;
+    document.addEventListener('click', function(e){ if (!e.target.closest('.us-chip-wrap')) qsa('.us-popover').forEach(function(p){ p.remove(); }); });
+  }
 }
 
 function handleUserSummaryEdit(qIdx, val) {
@@ -904,6 +940,7 @@ function handleUserSummaryEdit(qIdx, val) {
   else if (q.id === 'chargeFreq') userProfile.chargeFreq = val;
   else if (q.id === 'gridIntensity') userProfile.gridIntensity = parseInt(val);
   else if (q.id === 'ownershipYears') userProfile.ownershipYears = parseInt(val);
+  else if (q.id === 'newUsed') userProfile.newUsed = val;
   addSys('Updated '+q.id.replace(/([A-Z])/g,' $1').toLowerCase()+' to '+val);
   buildUserSummary();
   buildAnswerTile();
@@ -1204,7 +1241,7 @@ document.addEventListener('DOMContentLoaded', function(){
     setTimeout(function(){
       addMsg("Hello! I'm <strong>GreenCarBot</strong>. I estimate <em>your</em> real-world vehicle CO\u2082 emissions, not just EPA lab numbers. \uD83C\uDF3F", 'bot');
       setTimeout(function(){
-        addMsg("The EPA tests vehicles in a lab. <strong>Your</strong> emissions depend on how you drive, how often you charge, and where your electricity comes from. Let me ask you five quick questions to build <em>your</em> personalised picture.", 'bot');
+        addMsg("The EPA tests vehicles in a lab. <strong>Your</strong> emissions depend on how you drive, how often you charge, and where your electricity comes from. Let me ask you six quick questions to build <em>your</em> personalised picture.", 'bot');
         setTimeout(function(){ startInterview(); }, 600);
       }, 500);
     }, 300);
