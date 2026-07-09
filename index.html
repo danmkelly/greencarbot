@@ -104,6 +104,14 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); display
 .f-chip.f-seat.active { background:var(--accent); color:#000; border-color:var(--accent); }
 .f-chip.dead { opacity:0.35; text-decoration:line-through; cursor:not-allowed; pointer-events:none; }
 
+/* User summary bar */
+#user-summary { display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
+#user-summary .us-chip { font-size:0.62rem; padding:2px 6px; border-radius:8px; cursor:pointer; border:1px solid var(--border); background:var(--card); color:var(--muted); white-space:nowrap; transition:all 0.15s; }
+#user-summary .us-chip:hover { border-color:var(--accent); }
+#user-summary .us-chip .us-lbl { color:var(--muted); }
+#user-summary .us-chip .us-val { color:var(--accent); font-weight:600; margin-left:2px; }
+#user-summary .us-label { font-size:0.58rem; color:var(--muted); text-transform:uppercase; margin-right:2px; }
+
 /* Reflection box */
 #reflection-box { padding:12px 14px; margin:8px 10px 0; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); display:none; }
 #reflection-box h4 { font-size:0.75rem; color:var(--accent); margin-bottom:6px; }
@@ -231,6 +239,7 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); display
         <option value="gap">Real-world gap: Largest</option>
       </select>
     </div>
+    <div id="user-summary" style="display:none;padding:6px 14px;border-bottom:1px solid var(--border);flex-shrink:0;"></div>
     <div id="filter-bar">
       <span class="f-chip f-powertrain active" data-pt="ev">⚡ EV</span>
       <span class="f-chip f-powertrain active" data-pt="phev">🔌 PHEV</span>
@@ -513,6 +522,10 @@ function finishInterview() {
 
   syncFilterChips();
 
+  // Build summary bars
+  buildUserSummary();
+  buildAnswerTile();
+
   // Point to filter bar for refining
   addMsg("Got it! Your personalised results are in the panel on the right. <strong>Use the filter chips above the cards</strong> to narrow by body type, seats, or powertrain \u2014 I'll re-rank instantly. You can also ask me about electricity mixes, charging routines, or how different driving patterns affect your numbers.", 'bot');
 
@@ -791,6 +804,68 @@ function buildReflection(top, allCandidates) {
 // ANSWER TILE
 // =========================================================================
 function buildAnswerTile() {
+
+// =========================================================================
+// USER SUMMARY BAR (above filter bar on results side)
+// =========================================================================
+function buildUserSummary() {
+  var bar = el('user-summary');
+  if (!userProfile) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML = '<span class="us-label">Your profile:</span>';
+
+  var p = userProfile;
+  var items = [
+    {lbl:'km/yr', val: p.annualKm ? p.annualKm.toLocaleString() : '?', opts:[5000,15000,25000,35000], prop:'annualKm', qIdx:0},
+    {lbl:'trips', val: p.tripLengthLabel||'?', opts:['short','medium','long'], labels:{short:'<30 km',medium:'30-80 km',long:'>80 km'}, prop:'tripLengthLabel', qIdx:1},
+    {lbl:'charge', val: p.chargeFreq||'?', opts:['daily','weekly','rarely','never'], prop:'chargeFreq', qIdx:2},
+    {lbl:'grid', val: p.gridIntensity ? p.gridIntensity+' g' : '?', opts:[50,300,400,700], labels:{50:'50 green',300:'300 avg',400:'400 unsure',700:'700 coal'}, prop:'gridIntensity', qIdx:3},
+    {lbl:'keep', val: p.ownershipYears ? p.ownershipYears+' yr' : '?', opts:[3,5,8,10], prop:'ownershipYears', qIdx:4},
+  ];
+
+  items.forEach(function(item){
+    var chip = document.createElement('span');
+    chip.className = 'us-chip';
+    chip.title = 'Click to change';
+    chip.innerHTML = '<span class="us-lbl">'+item.lbl+':</span><span class="us-val">'+item.val+'</span>';
+    chip.onclick = function(){
+      // Show all options for this item
+      var chips = item.opts.map(function(opt){
+        var label = (item.labels && item.labels[opt]) || opt;
+        return {l:label, q:'set:'+item.qIdx+':'+opt};
+      });
+      setChips(chips);
+      addMsg('Change <strong>'+item.lbl+'</strong> to what?', 'bot');
+      // Temporarily set interview step so the answer gets processed
+      interviewAnswers._userSummaryEdit = true;
+      interviewStep = item.qIdx;
+      interviewActive = true;
+    };
+    bar.appendChild(chip);
+  });
+}
+
+function handleUserSummaryEdit(qIdx, val) {
+  interviewActive = false;
+  setChips(null);
+
+  var tripKmMap = {short:20, medium:55, long:120};
+  var q = INTERVIEW[qIdx];
+  var parsed;
+
+  if (q.id === 'annualKm') { parsed = parseInt(val); userProfile.annualKm = parsed; }
+  else if (q.id === 'tripLength') { parsed = val; userProfile.tripLengthLabel = parsed; userProfile.tripLengthKm = tripKmMap[parsed]||55; }
+  else if (q.id === 'chargeFreq') { parsed = val; userProfile.chargeFreq = parsed; }
+  else if (q.id === 'gridIntensity') { parsed = parseInt(val); userProfile.gridIntensity = parsed; }
+  else if (q.id === 'ownershipYears') { parsed = parseInt(val); userProfile.ownershipYears = parsed; }
+
+  addSys('Updated '+q.id.replace(/([A-Z])/g,' $1').toLowerCase()+' to '+val);
+  buildUserSummary();
+  buildAnswerTile();
+  runRecommendation();
+}
+
+function buildAnswerTile() {
   var tile = el('answers-tile');
   if (!userProfile) { tile.style.display = 'none'; return; }
   tile.style.display = 'block';
@@ -884,6 +959,7 @@ function send() {
       el('progress-fill').style.width = '0%'; el('interview-banner').style.display = 'none';
       el('summary-bar').style.display = 'none';
       el('answers-tile').style.display = 'none'; el('answers-tile').innerHTML = '';
+      el('user-summary').style.display = 'none'; el('user-summary').innerHTML = '';
       el('reflection-box').style.display = 'none';
       powertrains = { ev:true, phev:true, ice:true, diesel:true };
       minSeats = 5;
@@ -898,14 +974,23 @@ function send() {
       startInterview(); sending = false; return;
     }
     if (s === 'methodology' || s === 'how this works') { window.location.href = 'how-it-works.html'; sending = false; return; }
+    // Handle user-summary chip edits: "set:qIdx:value"
+    if (s.indexOf('set:') === 0) {
+      var parts = s.split(':');
+      var qIdx = parseInt(parts[1]);
+      var val = parts[2];
+      handleUserSummaryEdit(qIdx, val);
+      sending = false; return;
+    }
     if (s === 'explain #1') {
       if (userProfile) {
         var ranked = allCars.filter(function(c){ return c._rank === 1; });
         if (ranked.length) addMsg(buildExplain(ranked[0]), 'bot');
       }
+      setChips([{l:'EV vs PHEV vs ICE',q:'compare ev vs phev vs ice'},{l:'How does my grid affect this?',q:'how does electricity source affect EV emissions'},{l:'What if I charged more?',q:'what if I charged daily instead'}]);
       sending = false; return;
     }
-    if (s === 'compare ev vs phev vs ice') { showComparison(); sending = false; return; }
+    if (s === 'compare ev vs phev vs ice') { showComparison(); setChips([{l:'Explain the top pick',q:'explain #1'},{l:'How does my grid affect EVs?',q:'how does electricity source affect EV emissions'},{l:'Adjust my answers',q:'restart'}]); sending = false; return; }
 
     if (interviewActive) {
       if (processAnswer(txt)) { sending = false; return; }
@@ -924,7 +1009,7 @@ function send() {
         else userProfile.minSeats = kw.seats;
       }
       syncFilterChips();
-      if (userProfile) runRecommendation();
+      if (userProfile) { runRecommendation(); setChips([{l:'Explain the top pick',q:'explain #1'},{l:'How does my grid affect EVs?',q:'how does electricity source affect EV emissions'}]); }
       else { addMsg("I've updated the filters. To get personalised CO\u2082 estimates, let me ask you a few quick questions first.", 'bot'); }
       setChips([{l:'Start the interview',q:'restart'},{l:'Show all vehicles',q:'show all'}]);
       sending = false; return;
@@ -951,6 +1036,7 @@ function send() {
         showTyping();
         chatLLM(txt).then(function(reply){ hideTyping(); if (reply) addMsg(reply, 'bot'); else showDefaultResponse(); });
       } else showDefaultResponse();
+      setChips([{l:'Start the interview',q:'restart'},{l:'Show EVs',q:'show EV'},{l:'How this works',q:'methodology'}]);
     }
   } finally { sending = false; }
 }
@@ -1082,6 +1168,7 @@ document.addEventListener('DOMContentLoaded', function(){
     filters.bodyType = '';
     syncFilterChips();
     el('answers-tile').style.display = 'none'; el('answers-tile').innerHTML = '';
+    el('user-summary').style.display = 'none'; el('user-summary').innerHTML = '';
     el('reflection-box').style.display = 'none';
     el('car-grid').innerHTML = ''; el('empty-state').style.display = 'flex';
     // Re-insert reflection box
